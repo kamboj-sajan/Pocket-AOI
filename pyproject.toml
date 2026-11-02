@@ -1,0 +1,38 @@
+[project]
+name = "pocket-aoi"
+version = "0.1.0"
+description = "Find assembly mistakes on through-hole boards from one phone photo, and say what each one will break."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "torch",
+    "torchvision",  # Sam3Processor's image processor needs it.
+    "transformers>=5.5",
+    "opencv-python",
+    "numpy",
+    "pillow",
+    "scipy",
+    "scikit-image",
+    "pycocotools",
+    "pydantic>=2",
+    "gradio",
+    "pyyaml",
+    "python-dotenv",
+    "openai",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+pocket-aoi = "pocket_aoi.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pocket_aoi"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

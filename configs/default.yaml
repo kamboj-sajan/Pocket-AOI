@@ -1,0 +1,80 @@
+# Every threshold lives here, and each report records this file's hash.
+# "guess" marks a starting value the spec leaves open; tune it in the block named.
+
+models:
+  # unsloth/sam3.1 is Meta's SAM 3.1 in transformers format. facebook/sam3.1 ships only a raw .pt.
+  sam: unsloth/sam3.1
+
+llm:
+  temperature: 1.0
+  top_p: 0.95
+  top_k: 64
+  max_tokens: 4096
+  timeout_s: 180
+  cache_dir: runs/llm_cache
+  reasoning:
+    smoke: low
+    verdict: low
+    silkscreen: low
+    netlist: medium
+    consequence: medium
+  prompt_versions:
+    smoke: v1
+    verdict: v1
+    silkscreen: v1
+    netlist: v1
+    consequence: v1
+
+align:
+  canonical_long_side: 2000
+  lowe_ratio: 0.75
+  ransac_px: 3.0
+  min_inliers: 50
+  max_median_reproj_px: 2.0
+  min_board_iou: 0.97
+
+segment:
+  board_prompt: printed circuit board
+  # Prompt text sent to SAM -> PartClass. Add "IC socket", "potentiometer" or "connector" per kit.
+  class_prompts:
+    electrolytic capacitor: electrolytic_capacitor
+    ceramic capacitor: ceramic_capacitor
+    resistor: resistor
+    diode: diode
+    LED: led
+    integrated circuit: ic
+    transistor: transistor
+  score_threshold: 0.4
+  mask_threshold: 0.5
+  class_score_thresholds: {}   # per-class overrides, calibrated on golden photos in Block 1
+  tile_grid: 2
+  tile_overlap: 0.2
+  merge_iou: 0.5
+  specific_class_score_delta: 0.1
+  min_part_area_ratio: 0.0002  # guess, Block 1
+  max_part_area_ratio: 0.25    # guess, Block 1
+
+compare:
+  min_match_iou: 0.1
+  centroid_cost_weight: 0.5
+  class_mismatch_cost: 1.0
+  crop_margin: 0.25
+  missing_ssim: 0.5            # guess, Block 2
+  wrong_part_ssim: 0.3         # guess, Block 2
+  shifted_offset_ratio: 0.3
+  shifted_min_iou: 0.5
+  rotation_margin: 0.1         # guess, Block 2
+
+verdict:
+  ok_drop_confidence: 0.7
+  fault_type_confidence: 0.6
+  composite_min_part_px: 384
+
+polarized_classes: [electrolytic_capacitor, diode, led, ic, transistor]
+
+polarity_hints:
+  electrolytic_capacitor: light stripe with minus signs on the can sleeve marks the negative lead
+  diode: painted band at one end marks the cathode
+  led: flat edge on the rim marks the cathode
+  ic: notch or dot at the pin-1 end
+  transistor: flat printed face
