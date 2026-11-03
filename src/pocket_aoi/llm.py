@@ -136,7 +136,7 @@ class LLMClient:
             max_retries=max_retries,
             http_client=http_client,
         )
-        self._use_response_format = True
+        self.use_response_format = True
 
     def complete(
         self,
@@ -219,7 +219,7 @@ class LLMClient:
             "max_tokens": self.settings.max_tokens,
             "extra_body": {"top_k": self.settings.top_k},  # top_k is not a standard OpenAI field.
         }
-        if schema is not None and self._use_response_format:
+        if schema is not None and self.use_response_format:
             request["response_format"] = {
                 "type": "json_schema",
                 "json_schema": {"name": schema.__name__, "schema": schema.model_json_schema()},
@@ -234,7 +234,7 @@ class LLMClient:
             # Not every backend accepts a JSON schema. The prompt still asks for JSON, and pydantic still checks it.
             del request["response_format"]
             response = self._openai.chat.completions.create(**request)
-            self._use_response_format = False
+            self.use_response_format = False
         return response.choices[0].message.content or ""
 
     def _cache_path(self, prompt: Prompt, system: str, user: str, image: bytes | None) -> Path:

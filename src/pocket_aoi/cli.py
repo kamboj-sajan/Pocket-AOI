@@ -79,6 +79,7 @@ def _cmd_smoke_llm(args: argparse.Namespace) -> int:
         print(f"ERROR: the backend call failed: {error}", file=sys.stderr)
         return 1
     print(f"Latency : {time.perf_counter() - started:.1f} s")
+    print(f"Schema  : {'accepted' if client.use_response_format else 'rejected; relying on the prompt and pydantic'}")
     print(f"Reply   : {reply}")
 
     parsed = SmokeReply.model_validate_json(extract_json(reply))
