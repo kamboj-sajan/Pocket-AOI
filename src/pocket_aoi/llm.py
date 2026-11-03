@@ -27,6 +27,8 @@ PROMPTS_DIR = REPO_ROOT / "prompts"
 # Matches {ref} but not the {"ref": ...} in a JSON example, so literal braces survive.
 _PLACEHOLDER = re.compile(r"\{([a-z_]+)\}")
 
+_OUT_OF_CREDITS = 402
+
 # Like a C++ template parameter: complete_json returns the same model type it is given.
 SchemaT = TypeVar("SchemaT", bound=BaseModel)
 
@@ -126,7 +128,7 @@ class LLMClient:
         self,
         settings: LLMSettings,
         http_client: httpx.Client | None = None,
-        max_retries: int = 2,
+        max_retries: int = 4,
     ) -> None:
         self.settings = settings
         self._openai = OpenAI(
@@ -180,9 +182,10 @@ class LLMClient:
         """Return a validated reply, retrying once with the error appended.
 
         Returns None if the reply stays invalid or the call fails, so the caller records
-        UNSURE and the run continues. A rejected API key still raises, because it would
-        otherwise mark every part on the board UNSURE. An optional check adds rules that a
-        schema cannot express, returning an error message or None.
+        UNSURE and the run continues. A rejected API key or an empty account still raises,
+        because every later call would fail too, marking every part on the board UNSURE and
+        quietly corrupting an evaluation. An optional check adds rules that a schema cannot
+        express, returning an error message or None.
         """
         feedback = ""
         for _ in range(2):
@@ -205,6 +208,9 @@ class LLMClient:
             except (AuthenticationError, PermissionDeniedError):
                 raise
             except APIError as error:
+                # getattr with a default, because a connection error has no HTTP status at all.
+                if getattr(error, "status_code", None) == _OUT_OF_CREDITS:
+                    raise
                 logger.warning("%s call failed: %s", prompt.id, error)
                 return None
         return None

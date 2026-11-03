@@ -44,6 +44,7 @@ class PhotoResult:
     found_in_review: int = 0
     extra_findings: int = 0
     needs_review: int = 0
+    failed_calls: int = 0
     off_board: int = 0
     off_board_found: int = 0
     missed: list[str] = field(default_factory=list)
@@ -143,6 +144,11 @@ def format_ablation(cv_only: Sequence[PhotoResult], fused: Sequence[PhotoResult]
             f"| {row['needs_review_per_photo']:.2f} |"
         )
     return "\n".join(lines)
+
+
+def format_failed_calls(results: Sequence[PhotoResult]) -> str:
+    """State how many verdicts had no valid reply, since each one reads as UNSURE in the tables above."""
+    return f"Verdict calls with no valid reply: {sum(result.failed_calls for result in results)}"
 
 
 def format_runtime(results: Sequence[PhotoResult]) -> str:

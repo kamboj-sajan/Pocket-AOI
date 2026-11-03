@@ -265,6 +265,8 @@ def _cmd_inspect_cv(args: argparse.Namespace, cfg: dict) -> int:
 
 def _cmd_inspect(args: argparse.Namespace) -> int:
     """Inspect one photo end to end, or stop after Stage 3 with --cv-only."""
+    from openai import APIError
+
     from pocket_aoi.pipeline import inspect_photo, load_golden_board
     from pocket_aoi.report import banner_text, fault_label
 
@@ -280,7 +282,11 @@ def _cmd_inspect(args: argparse.Namespace) -> int:
 
     board = load_golden_board(args.board_id, cfg)
     run_dir = REPO_ROOT / "runs" / f"{args.board_id}_{args.photo.stem}"
-    result = inspect_photo(args.photo, board, _segmenter_factory(cfg), client, cfg, run_dir, use_cache=not args.no_cache)
+    try:
+        result = inspect_photo(args.photo, board, _segmenter_factory(cfg), client, cfg, run_dir, use_cache=not args.no_cache)
+    except APIError as error:
+        print(f"ERROR: the Muse Glimmer backend refused the call: {error}", file=sys.stderr)
+        return 1
     if not result.ok or result.report is None:
         print(f"Result    : {result.message}")
         return 1
@@ -299,6 +305,8 @@ def _cmd_inspect(args: argparse.Namespace) -> int:
 
 def _cmd_eval(args: argparse.Namespace) -> int:
     """Score the pipeline against ground truth on real photos."""
+    from openai import APIError
+
     # eval/ sits beside src/, so its folder's parent must be on the import path.
     sys.path.insert(0, str(REPO_ROOT))
     from eval.run_eval import load_ground_truth, run_eval
@@ -311,7 +319,11 @@ def _cmd_eval(args: argparse.Namespace) -> int:
         return 2
     records = load_ground_truth(args.gt, args.split, args.board)
     print(f"{len(records)} photos")
-    run_eval(records, _segmenter_factory(cfg), client, cfg, args.tag)
+    try:
+        run_eval(records, _segmenter_factory(cfg), client, cfg, args.tag)
+    except APIError as error:
+        print(f"ERROR: the Muse Glimmer backend refused the call, so no results were written: {error}", file=sys.stderr)
+        return 1
     return 0
 
 

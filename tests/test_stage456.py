@@ -210,6 +210,12 @@ def test_check_card_rejects_an_invented_pad_and_net() -> None:
     assert "RAIL5" in check_card(_card(consequence="This drops net RAIL5."), "C1", NETLIST)
 
 
+def test_check_card_accepts_eagle_pad_names() -> None:
+    netlist = NETLIST.model_copy(update={"nets": [*NETLIST.nets, Net(name="RESET", nodes=["R1.P$2"])]})
+    assert check_card(_card(facts_used=["R1.P$2 on net RESET"]), "C1", netlist) is None
+    assert "R1.P$9" in check_card(_card(facts_used=["R1.P$9 on net RESET"]), "C1", netlist)
+
+
 def test_check_card_allows_chip_names_and_ordinary_words_about_nets() -> None:
     assert check_card(_card(consequence="The NE555 keeps running, and the net effect is noise."), "C1", NETLIST) is None
 

@@ -15,6 +15,7 @@ from eval.metrics import (
     PhotoResult,
     box_covers_mask,
     format_ablation,
+    format_failed_calls,
     format_misses,
     format_runtime,
     format_summary,
@@ -35,7 +36,7 @@ from pocket_aoi.pipeline import (
 )
 from pocket_aoi.schemas import GroundTruth
 from pocket_aoi.segment import Segmenter
-from pocket_aoi.verdict import judge_suspects
+from pocket_aoi.verdict import NO_REPLY, judge_suspects
 
 
 @dataclass(frozen=True)
@@ -198,6 +199,7 @@ def run_eval(
                 eval_cfg,
             )
             fused_result.seconds["verdicts"] = time.perf_counter() - started
+            fused_result.failed_calls = sum(item.verdict.evidence == NO_REPLY for item in judged)
             fused_results.append(fused_result)
             line += f" | fused {fused_result.found_any}/{fused_result.planted} extra {fused_result.extra_findings} review {fused_result.needs_review}"
 
@@ -221,6 +223,8 @@ def run_eval(
             "# Ablation",
             "",
             format_ablation(cv_results, fused_results),
+            "",
+            format_failed_calls(fused_results),
         ]
     sections += ["", "# Runtime", "", format_runtime(final)]
     summary_text = "\n".join(sections)

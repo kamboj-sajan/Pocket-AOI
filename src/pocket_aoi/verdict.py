@@ -10,6 +10,8 @@ from pocket_aoi.llm import LLMClient, load_prompt
 from pocket_aoi.netlist import find_component
 from pocket_aoi.schemas import Fault, GoldenProfile, Netlist, Part, Suspect, Verdict
 
+NO_REPLY = "no valid reply"
+
 
 @dataclass(frozen=True)
 class Judged:
@@ -86,7 +88,7 @@ def judge_suspects(
     def judge(suspect: Suspect) -> Judged:
         values = prompt_values(suspect, parts.get(suspect.golden_ref), netlist, cfg)
         image = Path(suspect.composite_path).read_bytes()
-        verdict = client.complete_json(Verdict, prompt, values, image=image) or unsure_verdict("no valid reply")
+        verdict = client.complete_json(Verdict, prompt, values, image=image) or unsure_verdict(NO_REPLY)
         return Judged(suspect, verdict, fuse(suspect, verdict, cfg["verdict"]))
 
     # A thread pool suits this because each call waits on the network, not the CPU. pool.map keeps input order.

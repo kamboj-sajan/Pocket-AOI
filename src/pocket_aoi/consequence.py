@@ -22,8 +22,8 @@ ORIENTATION_FAULTS = ("REVERSED", "ROTATED")
 
 # Looks like a reference designator or a chip name: letters then digits, such as C7, LED3 or LM386.
 _REF_LIKE = re.compile(r"\b[A-Z]{1,4}\d+[A-Z]?\b")
-# A pad on a part, such as U2.8 or C3.+
-_NODE_LIKE = re.compile(r"\b([A-Z]{1,4}\d+)\.([A-Za-z0-9+\-]+)")
+# A pad on a part, such as U2.8, C3.+ or Eagle's R1.P$2
+_NODE_LIKE = re.compile(r"\b([A-Z]{1,4}\d+)\.([A-Za-z0-9$+\-]+)")
 # The word "net" followed by a name, which must hold a capital or a digit so prose such as "net effect" passes.
 _NET_LIKE = re.compile(r"\bnets?\s+([A-Za-z0-9_$+\-/]*[A-Z0-9][A-Za-z0-9_$+\-/]*)")
 

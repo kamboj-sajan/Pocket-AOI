@@ -6,7 +6,7 @@ from pathlib import Path
 
 import httpx
 import pytest
-from openai import AuthenticationError
+from openai import APIStatusError, AuthenticationError
 from pydantic import BaseModel
 
 from pocket_aoi.config import load_config
@@ -197,6 +197,14 @@ def test_backend_without_json_schema_support_falls_back(tmp_path: Path) -> None:
     assert client.complete_json(Answer, prompt, use_cache=False) == Answer(value=3)
     # Rejected once, retried without it, and never sent again.
     assert ["response_format" in r for r in requests] == [True, False, False]
+
+
+def test_empty_account_raises_instead_of_reading_as_unsure(tmp_path: Path) -> None:
+    client, requests = _client(tmp_path, lambda _: httpx.Response(402, json={"error": {"message": "no credits"}}))
+    with pytest.raises(APIStatusError) as caught:
+        client.complete_json(Verdict, VERDICT_PROMPT, {"ref": "C7", "ssim": 0.5}, image=PNG_BYTES)
+    assert caught.value.status_code == 402
+    assert len(requests) == 1  # Retrying cannot help, so it stops at once.
 
 
 def test_settings_repr_hides_the_api_key(tmp_path: Path) -> None:
