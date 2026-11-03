@@ -4,6 +4,10 @@
 # Photos and pipeline output
 data/
 runs/
+boards/*/golden*.jpg
+boards/*/golden*.png
+boards/*/golden_frame.json
+boards/*/golden_profile.json
 
 # Python
 .venv/

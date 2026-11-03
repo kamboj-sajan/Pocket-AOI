@@ -1,0 +1,19 @@
+# VisA pcb3 is an LM393 infrared sensor module. Its silkscreen prints no refs, so these names are ours.
+# Boxes are on the canonical golden image. D2A and D2C had no SAM mask, so their boxes stand in as masks.
+parts:
+  - {ref: U1, cls: ic, box: [777, 60, 1271, 381]}
+  - {ref: RV1, cls: other, box: [788, 395, 1242, 848]}
+  - {ref: R1, cls: resistor, box: [1338, 78, 1529, 185]}
+  - {ref: R2, cls: resistor, box: [1340, 248, 1523, 356]}
+  - {ref: R3, cls: resistor, box: [1340, 413, 1531, 521]}
+  - {ref: R4, cls: resistor, box: [625, 147, 773, 380]}
+  - {ref: R5, cls: resistor, box: [639, 572, 751, 752]}
+  - {ref: C1, cls: ceramic_capacitor, box: [1331, 571, 1526, 687]}
+  - {ref: C2, cls: ceramic_capacitor, box: [1337, 753, 1526, 855]}
+  - {ref: LED1, cls: other, box: [331, 147, 574, 288]}
+  - {ref: LED2, cls: other, box: [333, 646, 565, 780]}
+  - {ref: J1, cls: other, box: [4, 204, 188, 689]}
+  - {ref: D1A, cls: other, box: [1786, 122, 2000, 229]}
+  - {ref: D1C, cls: other, box: [1783, 284, 2000, 407]}
+  - {ref: D2A, cls: other, box: [1775, 543, 2000, 664]}
+  - {ref: D2C, cls: other, box: [1775, 700, 2000, 821]}

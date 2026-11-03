@@ -1,0 +1,15 @@
+{
+ "photo": "data/raw/visa/pcb2/Data/Images/Anomaly/006.JPG",
+ "board_id": "visa-pcb2",
+ "defects": [
+  {
+   "type": "SHIFTED",
+   "mask": "data/raw/visa/pcb2/Data/Masks/Anomaly/006.png",
+   "accept": [
+    "WRONG_PART"
+   ]
+  }
+ ],
+ "label": "bent,melt",
+ "split": "dev"
+}

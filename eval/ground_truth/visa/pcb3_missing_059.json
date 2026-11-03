@@ -1,0 +1,13 @@
+{
+ "photo": "data/raw/visa/pcb3/Data/Images/Anomaly/059.JPG",
+ "board_id": "visa-pcb3",
+ "defects": [
+  {
+   "type": "MISSING",
+   "mask": "data/raw/visa/pcb3/Data/Masks/Anomaly/059.png",
+   "accept": []
+  }
+ ],
+ "label": "missing",
+ "split": "dev"
+}

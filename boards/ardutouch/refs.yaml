@@ -1,0 +1,38 @@
+# Hand-labelled on the canonical golden image, as x0, y0, x1, y1. "other" parts are real
+# objects outside the seven classes, so a detection on one is a wrong label, not a false alarm.
+parts:
+  - {ref: R15, cls: resistor, box: [500, 205, 740, 265]}
+  - {ref: R14, cls: resistor, box: [755, 195, 998, 262]}
+  - {ref: R13, cls: resistor, box: [1010, 205, 1253, 262]}
+  - {ref: R4, cls: resistor, box: [498, 315, 742, 362]}
+  - {ref: R3, cls: resistor, box: [805, 312, 1048, 362]}
+  - {ref: R5, cls: resistor, box: [498, 412, 742, 465]}
+  - {ref: R2, cls: resistor, box: [805, 408, 1048, 460]}
+  - {ref: R1, cls: resistor, box: [498, 508, 740, 558]}
+  - {ref: R9, cls: resistor, box: [1525, 15, 1775, 80]}
+  - {ref: R8, cls: resistor, box: [1525, 100, 1775, 155]}
+  - {ref: R7, cls: resistor, box: [1212, 548, 1458, 605]}
+  - {ref: R6, cls: resistor, box: [1212, 630, 1458, 680]}
+  - {ref: C3, cls: electrolytic_capacitor, box: [270, 312, 382, 503]}
+  - {ref: C6, cls: electrolytic_capacitor, box: [1250, 180, 1375, 340]}
+  - {ref: C7, cls: electrolytic_capacitor, box: [1245, 300, 1385, 505]}
+  - {ref: C8, cls: electrolytic_capacitor, box: [1580, 138, 1755, 298]}
+  - {ref: C1, cls: ceramic_capacitor, box: [38, 585, 125, 658]}
+  - {ref: C2, cls: ceramic_capacitor, box: [36, 745, 122, 808]}
+  - {ref: C5, cls: ceramic_capacitor, box: [1500, 525, 1597, 600]}
+  - {ref: C4, cls: ceramic_capacitor, box: [1505, 600, 1597, 665]}
+  - {ref: LED3, cls: led, box: [620, 10, 742, 175]}
+  - {ref: LED2, cls: led, box: [862, 12, 985, 170]}
+  - {ref: LED1, cls: led, box: [1110, 12, 1235, 170]}
+  - {ref: U1, cls: ic, box: [258, 590, 995, 785]}
+  - {ref: U2, cls: ic, box: [1635, 365, 1830, 570]}
+  - {ref: S1, cls: other, box: [240, 155, 435, 302]}
+  - {ref: S3, cls: other, box: [1183, 808, 1378, 943]}
+  - {ref: S2, cls: other, box: [1430, 808, 1625, 943]}
+  - {ref: X1, cls: other, box: [645, 825, 790, 918]}
+  - {ref: R10, cls: other, box: [1390, 275, 1595, 515]}
+  - {ref: R12, cls: other, box: [60, 935, 245, 1140]}
+  - {ref: R11, cls: other, box: [60, 1215, 245, 1410]}
+  - {ref: J1, cls: other, box: [205, 0, 515, 110]}
+  - {ref: J2, cls: other, box: [55, 65, 165, 220]}
+  - {ref: B1, cls: other, box: [30, 360, 180, 510]}

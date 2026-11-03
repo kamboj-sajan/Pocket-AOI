@@ -82,8 +82,10 @@ class Segmenter:
         # A with-block is Python's RAII: gradient tracking stays off until the block ends.
         with torch.inference_mode():
             vision_embeds = self.model.get_vision_features(pixel_values=inputs["pixel_values"])
+        # MPS queues work lazily. This read waits for the encoder, so it must come before the timer stops.
+        original_sizes = inputs["original_sizes"].tolist()
         self.seconds["encode"] += time.perf_counter() - started
-        return EncodedImage(vision_embeds, inputs["original_sizes"].tolist())
+        return EncodedImage(vision_embeds, original_sizes)
 
     def segment_encoded(
         self,

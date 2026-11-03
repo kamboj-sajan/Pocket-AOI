@@ -1,0 +1,13 @@
+{
+ "photo": "data/raw/visa/pcb4/Data/Images/Anomaly/043.JPG",
+ "board_id": "visa-pcb4",
+ "defects": [
+  {
+   "type": "EXTRA",
+   "mask": "data/raw/visa/pcb4/Data/Masks/Anomaly/043.png",
+   "accept": []
+  }
+ ],
+ "label": "scratch,extra",
+ "split": "dev"
+}

@@ -36,3 +36,4 @@ packages = ["src/pocket_aoi"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]

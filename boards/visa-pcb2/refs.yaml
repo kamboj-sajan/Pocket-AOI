@@ -1,0 +1,19 @@
+# VisA pcb2 is the underside of an HC-SR04 sensor. Refs are read from its silkscreen. Boxes are on the
+# canonical golden image. SAM also found solder blobs, which stay known objects and are not inspected.
+parts:
+  - {ref: U1, cls: ic, box: [1600, 293, 1990, 622]}
+  - {ref: U2, cls: ic, box: [805, 374, 1197, 541]}
+  - {ref: U3, cls: ic, box: [17, 224, 347, 685]}
+  - {ref: J1, cls: other, box: [774, 0, 1229, 124]}
+  - {ref: R1, cls: resistor, box: [1279, 435, 1403, 487]}
+  - {ref: R2, cls: resistor, box: [1273, 620, 1404, 677]}
+  - {ref: R3, cls: resistor, box: [581, 409, 737, 493]}
+  - {ref: R4, cls: resistor, box: [594, 242, 721, 298]}
+  - {ref: R5, cls: resistor, box: [596, 146, 720, 204]}
+  - {ref: R6, cls: resistor, box: [1277, 241, 1400, 297]}
+  - {ref: C1, cls: ceramic_capacitor, box: [1275, 526, 1400, 580]}
+  - {ref: C2, cls: ceramic_capacitor, box: [596, 337, 721, 393]}
+  - {ref: C3, cls: ceramic_capacitor, box: [591, 618, 725, 679]}
+  - {ref: C4, cls: ceramic_capacitor, box: [1274, 149, 1403, 205]}
+  - {ref: C5, cls: ceramic_capacitor, box: [1276, 339, 1404, 390]}
+  - {ref: C6, cls: ceramic_capacitor, box: [593, 527, 722, 579]}

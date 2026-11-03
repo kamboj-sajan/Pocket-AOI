@@ -1,10 +1,11 @@
-"""Command line entry point: smoke tests, calibration and alignment so far; later blocks add setup-board, inspect and eval."""
+"""Command line entry point: smoke tests, calibration, alignment, setup-board, inspect and eval."""
 
 import argparse
 import io
 import random
 import sys
 import time
+from collections.abc import Callable
 from pathlib import Path
 
 from pydantic import BaseModel
@@ -128,19 +129,10 @@ def _cmd_smoke_sam(args: argparse.Namespace) -> int:
 
 def _cmd_spike(args: argparse.Namespace) -> int:
     """Calibrate Stage 2 on every golden photo under the kits folder."""
-    from functools import cache
-
-    from pocket_aoi.segment import Segmenter, resolve_model_id
     from pocket_aoi.spike import run_spike
 
     cfg = load_config()
-
-    # @cache remembers the first result, so the model loads at most once, and only if needed.
-    @cache
-    def make_segmenter() -> Segmenter:
-        return Segmenter(resolve_model_id(cfg))
-
-    run_spike(args.kits_dir, args.boards_dir, args.out, make_segmenter, cfg, fresh=args.fresh)
+    run_spike(args.kits_dir, args.boards_dir, args.out, _segmenter_factory(cfg), cfg, fresh=args.fresh)
     return 0
 
 
@@ -181,6 +173,148 @@ def _cmd_align(args: argparse.Namespace) -> int:
     return 0 if result.ok else 1
 
 
+def _segmenter_factory(cfg: dict) -> Callable[[], object]:
+    """Return a function that loads SAM at most once, and only if something needs it."""
+    from functools import cache
+
+    from pocket_aoi.segment import Segmenter, resolve_model_id
+
+    # @cache remembers the first result, so later calls return the same loaded model.
+    @cache
+    def make_segmenter() -> Segmenter:
+        return Segmenter(resolve_model_id(cfg))
+
+    return make_segmenter
+
+
+def _cmd_setup_board(args: argparse.Namespace) -> int:
+    """Stage 0: build golden_profile.json for one board design."""
+    from pocket_aoi.pipeline import setup_board
+
+    cfg = load_config()
+    profile = setup_board(args.board_id, args.golden, args.netlist, _segmenter_factory(cfg), cfg)
+    inspected = [part for part in profile.parts if part.ref is not None]
+    print(f"Board     : {args.board_id}, canonical {profile.canonical_size[0]} x {profile.canonical_size[1]}")
+    print(f"Parts     : {len(inspected)} to inspect, {len(profile.parts) - len(inspected)} other objects known")
+    weak = [part.ref for part in inspected if part.score == 0.0]
+    if weak:
+        print(f"No mask   : {', '.join(weak)} use their hand-drawn box")
+    print(f"Saved     : boards/{args.board_id}/golden_profile.json and golden_parts.png")
+    return 0
+
+
+def _cmd_relabel(args: argparse.Namespace) -> int:
+    """Rebuild a golden profile after editing refs.yaml, without running SAM."""
+    from pocket_aoi.pipeline import relabel_board
+
+    profile = relabel_board(args.board_id, load_config())
+    inspected = [part for part in profile.parts if part.ref is not None]
+    print(f"Board     : {args.board_id}")
+    print(f"Parts     : {len(inspected)} to inspect, {len(profile.parts) - len(inspected)} other objects known")
+    weak = [part.ref for part in inspected if part.score == 0.0]
+    if weak:
+        print(f"No mask   : {', '.join(weak)} use their hand-drawn box")
+    return 0
+
+
+def _make_client(cfg: dict) -> object:
+    """Build the Muse Glimmer client from .env and the config."""
+    from pocket_aoi.llm import LLMClient, LLMSettings
+
+    return LLMClient(LLMSettings.from_config(cfg))
+
+
+def _cmd_inspect_cv(args: argparse.Namespace, cfg: dict) -> int:
+    """Run Stages 1 to 3 on one photo, and write suspects.json with one composite per suspect."""
+    from pocket_aoi.pipeline import (
+        find_suspects,
+        load_golden_board,
+        prepare_photo,
+        save_debug_images,
+        save_suspects,
+        save_suspects_json,
+    )
+
+    board = load_golden_board(args.board_id, cfg)
+    make_segmenter = _segmenter_factory(cfg)
+    started = time.perf_counter()
+    prepared = prepare_photo(args.photo, board, make_segmenter, cfg, use_cache=not args.no_cache)
+    prepare_seconds = time.perf_counter() - started
+    run_dir = REPO_ROOT / "runs" / f"{args.board_id}_{args.photo.stem}"
+    run_dir.mkdir(parents=True, exist_ok=True)
+    save_debug_images(prepared, board, run_dir, cfg)
+
+    if not prepared.ok:
+        print(f"Result    : {prepared.message}")
+        return 1
+
+    started = time.perf_counter()
+    findings = find_suspects(prepared, board, cfg)
+    suspects = save_suspects(findings, prepared, board, run_dir, cfg)
+    compare_seconds = time.perf_counter() - started
+    save_suspects_json(suspects, run_dir)
+
+    print(f"Aligned   : board IoU {prepared.board_iou:.3f}, {prepared.sift_inliers} SIFT inliers, tilt {prepared.tilt_ratio:.2f}")
+    print(f"Time      : align and segment {prepare_seconds:.1f} s, compare {compare_seconds:.1f} s")
+    print(f"Suspects  : {len(suspects)}")
+    for suspect in suspects:
+        print(f"  {suspect.golden_ref or 'unknown part'}: {suspect.cv_finding}, SSIM {suspect.evidence['ssim']:.2f}")
+    print(f"Saved     : {run_dir}")
+    return 0
+
+
+def _cmd_inspect(args: argparse.Namespace) -> int:
+    """Inspect one photo end to end, or stop after Stage 3 with --cv-only."""
+    from pocket_aoi.pipeline import inspect_photo, load_golden_board
+    from pocket_aoi.report import banner_text, fault_label
+
+    cfg = load_config()
+    if args.cv_only:
+        return _cmd_inspect_cv(args, cfg)
+
+    try:
+        client = _make_client(cfg)
+    except ValueError as error:
+        print(f"ERROR: {error}", file=sys.stderr)
+        return 2
+
+    board = load_golden_board(args.board_id, cfg)
+    run_dir = REPO_ROOT / "runs" / f"{args.board_id}_{args.photo.stem}"
+    result = inspect_photo(args.photo, board, _segmenter_factory(cfg), client, cfg, run_dir, use_cache=not args.no_cache)
+    if not result.ok or result.report is None:
+        print(f"Result    : {result.message}")
+        return 1
+
+    report = result.report
+    print(f"Banner    : {banner_text(report)[0]}")
+    print(f"Suspects  : {len(result.judged)}, of which {sum(item.fault is None for item in result.judged)} rejected by Muse Glimmer")
+    for fault in report.faults:
+        severity = fault.consequence.severity if fault.consequence else "none"
+        print(f"  {fault_label(fault)}: {fault.status}, {severity}")
+    # A generator expression inside join, like a loop that appends to a string.
+    print("Time      : " + ", ".join(f"{stage} {seconds:.1f} s" for stage, seconds in report.timings_s.items()))
+    print(f"Report    : {result.paths['report.html']}")
+    return 0
+
+
+def _cmd_eval(args: argparse.Namespace) -> int:
+    """Score the pipeline against ground truth on real photos."""
+    # eval/ sits beside src/, so its folder's parent must be on the import path.
+    sys.path.insert(0, str(REPO_ROOT))
+    from eval.run_eval import load_ground_truth, run_eval
+
+    cfg = load_config()
+    try:
+        client = None if args.cv_only else _make_client(cfg)
+    except ValueError as error:
+        print(f"ERROR: {error}", file=sys.stderr)
+        return 2
+    records = load_ground_truth(args.gt, args.split, args.board)
+    print(f"{len(records)} photos")
+    run_eval(records, _segmenter_factory(cfg), client, cfg, args.tag)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="pocket-aoi", description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -210,6 +344,31 @@ def main(argv: list[str] | None = None) -> int:
     align.add_argument("--photo", type=Path, required=True)
     align.add_argument("--out", type=Path, help="default is runs/align/<photo name>/")
     align.set_defaults(handler=_cmd_align)
+
+    setup = commands.add_parser("setup-board", help="build the golden profile for one board design")
+    setup.add_argument("--board-id", required=True)
+    setup.add_argument("--golden", type=Path, required=True)
+    setup.add_argument("--netlist", type=Path, help="default is boards/<board id>/netlist.json if it exists")
+    setup.set_defaults(handler=_cmd_setup_board)
+
+    relabel = commands.add_parser("relabel", help="rebuild a golden profile from refs.yaml without running SAM")
+    relabel.add_argument("--board-id", required=True)
+    relabel.set_defaults(handler=_cmd_relabel)
+
+    inspect = commands.add_parser("inspect", help="inspect one photo against a board's golden profile")
+    inspect.add_argument("--board-id", required=True)
+    inspect.add_argument("--photo", type=Path, required=True)
+    inspect.add_argument("--cv-only", action="store_true", help="stop after Stage 3, without calling Muse Glimmer")
+    inspect.add_argument("--no-cache", action="store_true", help="run SAM again instead of reusing an earlier run")
+    inspect.set_defaults(handler=_cmd_inspect)
+
+    evaluate = commands.add_parser("eval", help="score the pipeline against ground truth")
+    evaluate.add_argument("--gt", type=Path, default=REPO_ROOT / "eval" / "ground_truth")
+    evaluate.add_argument("--split", choices=["dev", "test"], help="default is every photo")
+    evaluate.add_argument("--board", help="default is every board")
+    evaluate.add_argument("--tag", default="cv", help="results go to runs/eval/<tag>/")
+    evaluate.add_argument("--cv-only", action="store_true", help="stop after Stage 3, without calling Muse Glimmer")
+    evaluate.set_defaults(handler=_cmd_eval)
 
     args = parser.parse_args(argv)
     # Functions are ordinary values in Python, so set_defaults stored the right one for this command.

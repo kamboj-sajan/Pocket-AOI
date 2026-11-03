@@ -9,7 +9,7 @@ import json
 import logging
 import os
 import re
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, TypeVar
@@ -175,12 +175,14 @@ class LLMClient:
         *,
         image: bytes | None = None,
         use_cache: bool = True,
+        check: Callable[[SchemaT], str | None] | None = None,
     ) -> SchemaT | None:
         """Return a validated reply, retrying once with the error appended.
 
         Returns None if the reply stays invalid or the call fails, so the caller records
         UNSURE and the run continues. A rejected API key still raises, because it would
-        otherwise mark every part on the board UNSURE.
+        otherwise mark every part on the board UNSURE. An optional check adds rules that a
+        schema cannot express, returning an error message or None.
         """
         feedback = ""
         for _ in range(2):
@@ -188,7 +190,12 @@ class LLMClient:
                 reply = self.complete(
                     prompt, values, image=image, schema=schema, use_cache=use_cache, feedback=feedback
                 )
-                return schema.model_validate_json(extract_json(reply))
+                parsed = schema.model_validate_json(extract_json(reply))
+                problem = check(parsed) if check is not None else None
+                if problem is None:
+                    return parsed
+                logger.warning("%s reply failed its check: %s", prompt.id, problem)
+                feedback = f"Your previous reply was rejected:\n{problem}\nReturn only the corrected JSON object."
             except ValidationError as error:
                 logger.warning("%s reply failed validation: %s", prompt.id, error)
                 feedback = (

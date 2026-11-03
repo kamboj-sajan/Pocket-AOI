@@ -20,7 +20,7 @@ llm:
     consequence: medium
   prompt_versions:
     smoke: v1
-    verdict: v1
+    verdict: v2
     silkscreen: v1
     netlist: v1
     consequence: v1
@@ -64,6 +64,7 @@ segment:
   # Finds where every part is, whatever its kind: all 46 labelled parts on those two kits.
   locate_prompt: electronic component
   locate_threshold: 0.5        # lowest labelled part scored 0.52
+  locate_floor: 0.3            # the lowest score kept in the cache, so the threshold can be retuned
   label_match_iou: 0.25        # how closely a detection must sit on a hand-labelled box to count
   score_threshold: 0.4
   mask_threshold: 0.5
@@ -83,20 +84,42 @@ segment:
   suggested_threshold_margin: 0.02
 
 compare:
+  # Every value below is tuned on dev photos only. See eval/ and the README results.
   min_match_iou: 0.1
   centroid_cost_weight: 0.5
-  class_mismatch_cost: 1.0
   crop_margin: 0.25
-  missing_ssim: 0.5            # guess, Block 2
-  wrong_part_ssim: 0.3         # guess, Block 2
+  shift_search_ratio: 0.08      # how far a part may lean, as a share of its crop's shorter side
+  compare_side_px: 32           # each crop's shorter side is shrunk to this before comparing, to ignore fine texture
+  low_ssim_value: 0.2           # an SSIM-map pixel below this clearly differs
+  diff_value: 60                # a colour change above this, in 0-255, clearly differs
+  missing_ssim: 0.6
+  missing_diff_fraction: 0.4
+  same_appearance_ssim: 0.75    # above both of these, a mask that moved is SAM's noise, not a moved part
+  same_appearance_diff_fraction: 0.15
+  wrong_part_ssim: 0.35
+  wrong_part_low_fraction: 0.25
+  wrong_part_diff_fraction: 0.5
   shifted_offset_ratio: 0.3
   shifted_min_iou: 0.5
-  rotation_margin: 0.1         # guess, Block 2
+  rotation_crop_margin: 0.05
+  rotation_margin: 0.08
+  extra_max_golden_overlap: 0.3
+  extra_ssim: 0.6
+  extra_diff_fraction: 0.4
 
 verdict:
   ok_drop_confidence: 0.7
   fault_type_confidence: 0.6
   composite_min_part_px: 384
+  composite_max_side_px: 1024
+  max_workers: 6                # calls at once; each one waits on the network, not the CPU
+
+report:
+  overlay_long_side: 2400
+
+eval:
+  min_defect_overlap: 0.3   # a finding counts if it overlaps a defect mask by this share of the smaller area
+  min_in_frame_share: 0.25  # below this share inside the board outline, a defect is out of the camera frame we compare
 
 polarized_classes: [electrolytic_capacitor, diode, led, ic, transistor]
 

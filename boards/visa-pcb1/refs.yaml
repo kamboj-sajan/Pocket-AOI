@@ -1,0 +1,7 @@
+# VisA pcb1 is the top of an HC-SR04 sensor. "electronic component" scored under 0.5 on all of it,
+# so these hand-drawn boxes on the canonical golden image stand in as the part masks.
+parts:
+  - {ref: RX1, cls: other, box: [50, 95, 810, 870]}
+  - {ref: TX1, cls: other, box: [1215, 85, 1975, 860]}
+  - {ref: Y1, cls: other, box: [766, 665, 1226, 868]}
+  - {ref: J1, cls: other, box: [780, 30, 1220, 130]}

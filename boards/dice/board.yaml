@@ -13,27 +13,3 @@ class_prompts:
   red LED: led
   microchip: ic
   transistor: transistor
-# Hand-labelled on the canonical golden image, as x0, y0, x1, y1.
-parts:
-  - {ref: R1, cls: resistor, box: [248, 105, 318, 395]}
-  - {ref: R5, cls: resistor, box: [738, 292, 1020, 360]}
-  - {ref: R4, cls: resistor, box: [705, 505, 1030, 560]}
-  - {ref: R8, cls: resistor, box: [35, 320, 100, 640]}
-  - {ref: R2, cls: resistor, box: [540, 590, 592, 890]}
-  - {ref: R6, cls: resistor, box: [665, 830, 960, 892]}
-  - {ref: R7, cls: resistor, box: [665, 1008, 965, 1068]}
-  - {ref: R3, cls: resistor, box: [412, 855, 490, 1145]}
-  - {ref: D3, cls: led, box: [772, 122, 912, 255]}
-  - {ref: D6, cls: led, box: [1608, 100, 1730, 232]}
-  - {ref: D4, cls: led, box: [770, 630, 895, 755]}
-  - {ref: D1, cls: led, box: [1180, 572, 1305, 700]}
-  - {ref: D5, cls: led, box: [1612, 635, 1742, 762]}
-  - {ref: D7, cls: led, box: [780, 1120, 900, 1252]}
-  - {ref: D2, cls: led, box: [1608, 1118, 1732, 1242]}
-  - {ref: IC2, cls: ic, box: [1138, 112, 1358, 548]}
-  - {ref: IC1, cls: ic, box: [1135, 782, 1352, 1210]}
-  - {ref: T1, cls: transistor, box: [238, 518, 345, 650]}
-  - {ref: T2, cls: transistor, box: [250, 808, 380, 930]}
-  - {ref: C1, cls: ceramic_capacitor, box: [135, 588, 195, 805]}
-  - {ref: C2, cls: electrolytic_capacitor, box: [262, 1060, 345, 1140]}
-  - {ref: P1, cls: other, box: [385, 220, 600, 465]}

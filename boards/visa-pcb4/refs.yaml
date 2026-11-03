@@ -1,0 +1,18 @@
+# VisA pcb4 is a TP4056 battery charger. Its silkscreen prints no refs, so these names are ours. Boxes are
+# on the canonical golden image. The PAD refs are bare pads, inspected because a misplaced part can land on
+# them. IC legs, screw terminals and USB shell tabs stay known objects, and are not inspected.
+parts:
+  - {ref: U1, cls: ic, box: [1187, 681, 1636, 1384]}
+  - {ref: J1, cls: other, box: [0, 395, 423, 1079]}
+  - {ref: LED1, cls: other, box: [1281, 67, 1377, 309]}
+  - {ref: LED2, cls: other, box: [1505, 70, 1603, 313]}
+  - {ref: R1, cls: resistor, box: [931, 98, 1087, 560]}
+  - {ref: R2, cls: resistor, box: [1277, 386, 1377, 629]}
+  - {ref: R3, cls: resistor, box: [1501, 390, 1602, 634]}
+  - {ref: R4, cls: resistor, box: [848, 1337, 1100, 1446]}
+  - {ref: C1, cls: ceramic_capacitor, box: [929, 745, 1084, 1207]}
+  - {ref: C2, cls: ceramic_capacitor, box: [1725, 605, 1877, 1050]}
+  - {ref: PAD1, cls: other, box: [598, 305, 778, 474]}
+  - {ref: PAD2, cls: other, box: [592, 1043, 786, 1244]}
+  - {ref: PAD3, cls: other, box: [668, 589, 857, 666]}
+  - {ref: PAD4, cls: other, box: [668, 866, 858, 967]}

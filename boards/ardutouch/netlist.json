@@ -1,0 +1,809 @@
+{
+  "board_id": "ardutouch",
+  "description": "ArduTouch Arduino-compatible music synthesizer: ATmega328P, LM386 amplifier, speaker, touch keyboard",
+  "supply": {
+    "net": "VCC",
+    "volts": 4.5
+  },
+  "components": [
+    {
+      "ref": "U1",
+      "value": "ATmega328P",
+      "type": "ic",
+      "package": "DIP-28",
+      "pins": {
+        "21": "AREF",
+        "20": "AVCC",
+        "8": "GND",
+        "22": "GND",
+        "14": "PB0(ICP)",
+        "15": "PB1(OC1A)",
+        "16": "PB2(SS/OC1B)",
+        "17": "PB3(MOSI/OC2)",
+        "18": "PB4(MISO)",
+        "19": "PB5(SCK)",
+        "9": "PB6(XTAL1/TOSC1)",
+        "10": "PB7(XTAL2/TOSC2)",
+        "23": "PC0(ADC0)",
+        "24": "PC1(ADC1)",
+        "25": "PC2(ADC2)",
+        "26": "PC3(ADC3)",
+        "27": "PC4(ADC4/SDA)",
+        "28": "PC5(ADC5/SCL)",
+        "1": "PC6(/RESET)",
+        "2": "PD0(RXD)",
+        "3": "PD1(TXD)",
+        "4": "PD2(INT0)",
+        "5": "PD3(INT1)",
+        "6": "PD4(XCK/T0)",
+        "11": "PD5(T1)",
+        "12": "PD6(AIN0)",
+        "13": "PD7(AIN1)",
+        "7": "VCC"
+      }
+    },
+    {
+      "ref": "X1",
+      "value": "16.00MHz",
+      "type": "other",
+      "package": "CERM_OSC",
+      "pins": {
+        "P$2": "GND",
+        "P$1": "IN",
+        "P$3": "OUT"
+      }
+    },
+    {
+      "ref": "J1",
+      "value": "",
+      "type": "other",
+      "package": "1X06-BIGLOCK",
+      "pins": {
+        "1": "1",
+        "2": "2",
+        "3": "3",
+        "4": "4",
+        "5": "5",
+        "6": "6"
+      }
+    },
+    {
+      "ref": "J2",
+      "value": "ISP",
+      "type": "other",
+      "package": "AVRISP",
+      "pins": {
+        "6": "GND",
+        "1": "MISO",
+        "4": "MOSI",
+        "5": "RST",
+        "3": "SCK",
+        "2": "VCC"
+      }
+    },
+    {
+      "ref": "SPKR1",
+      "value": "",
+      "type": "other",
+      "package": "SPEAKER-TERMINALS",
+      "pins": {
+        "+": "+",
+        "-": "-"
+      }
+    },
+    {
+      "ref": "R1",
+      "value": "10K",
+      "type": "resistor",
+      "package": "axial",
+      "pins": {
+        "P$1": "1",
+        "P$2": "2"
+      }
+    },
+    {
+      "ref": "R2",
+      "value": "22M",
+      "type": "resistor",
+      "package": "axial",
+      "pins": {
+        "P$1": "1",
+        "P$2": "2"
+      }
+    },
+    {
+      "ref": "R3",
+      "value": "22M",
+      "type": "resistor",
+      "package": "axial",
+      "pins": {
+        "P$1": "1",
+        "P$2": "2"
+      }
+    },
+    {
+      "ref": "R4",
+      "value": "22M",
+      "type": "resistor",
+      "package": "axial",
+      "pins": {
+        "P$1": "1",
+        "P$2": "2"
+      }
+    },
+    {
+      "ref": "R5",
+      "value": "22M",
+      "type": "resistor",
+      "package": "axial",
+      "pins": {
+        "P$1": "1",
+        "P$2": "2"
+      }
+    },
+    {
+      "ref": "R6",
+      "value": "270",
+      "type": "resistor",
+      "package": "axial",
+      "pins": {
+        "P$1": "1",
+        "P$2": "2"
+      }
+    },
+    {
+      "ref": "R13",
+      "value": "1K",
+      "type": "resistor",
+      "package": "axial",
+      "pins": {
+        "P$1": "1",
+        "P$2": "2"
+      }
+    },
+    {
+      "ref": "R14",
+      "value": "1K",
+      "type": "resistor",
+      "package": "axial",
+      "pins": {
+        "P$1": "1",
+        "P$2": "2"
+      }
+    },
+    {
+      "ref": "R15",
+      "value": "1K",
+      "type": "resistor",
+      "package": "axial",
+      "pins": {
+        "P$1": "1",
+        "P$2": "2"
+      }
+    },
+    {
+      "ref": "U2",
+      "value": "LM386",
+      "type": "ic",
+      "package": "DIP-8",
+      "pins": {
+        "3": "+IN",
+        "2": "-IN",
+        "7": "BP",
+        "1": "GAIN",
+        "8": "GAIN",
+        "5": "OUT",
+        "6": "V+",
+        "4": "V-"
+      }
+    },
+    {
+      "ref": "R7",
+      "value": "270",
+      "type": "resistor",
+      "package": "axial",
+      "pins": {
+        "P$1": "1",
+        "P$2": "2"
+      }
+    },
+    {
+      "ref": "R8",
+      "value": "4.7K",
+      "type": "resistor",
+      "package": "axial",
+      "pins": {
+        "P$1": "1",
+        "P$2": "2"
+      }
+    },
+    {
+      "ref": "R9",
+      "value": "4.7K",
+      "type": "resistor",
+      "package": "axial",
+      "pins": {
+        "P$1": "1",
+        "P$2": "2"
+      }
+    },
+    {
+      "ref": "C3",
+      "value": "100uF",
+      "type": "electrolytic_capacitor",
+      "package": "radial",
+      "pins": {
+        "+": "+",
+        "-": "-"
+      }
+    },
+    {
+      "ref": "C8",
+      "value": "100uF",
+      "type": "electrolytic_capacitor",
+      "package": "radial",
+      "pins": {
+        "+": "+",
+        "-": "-"
+      }
+    },
+    {
+      "ref": "C6",
+      "value": "1uF",
+      "type": "electrolytic_capacitor",
+      "package": "radial",
+      "pins": {
+        "+": "+",
+        "-": "-"
+      }
+    },
+    {
+      "ref": "C7",
+      "value": "1uF",
+      "type": "electrolytic_capacitor",
+      "package": "radial",
+      "pins": {
+        "+": "+",
+        "-": "-"
+      }
+    },
+    {
+      "ref": "LED3",
+      "value": "Green",
+      "type": "led",
+      "package": "LED5MM",
+      "pins": {
+        "A": "A",
+        "K": "C"
+      }
+    },
+    {
+      "ref": "LED1",
+      "value": "Blue",
+      "type": "led",
+      "package": "LED5MM",
+      "pins": {
+        "A": "A",
+        "K": "C"
+      }
+    },
+    {
+      "ref": "LED2",
+      "value": "Red",
+      "type": "led",
+      "package": "LED5MM",
+      "pins": {
+        "A": "A",
+        "K": "C"
+      }
+    },
+    {
+      "ref": "S1",
+      "value": "",
+      "type": "other",
+      "package": "TACTILE_SWITCH_6.3MM",
+      "pins": {
+        "1": "1",
+        "2": "2",
+        "3": "3",
+        "4": "4"
+      }
+    },
+    {
+      "ref": "S2",
+      "value": "",
+      "type": "other",
+      "package": "TACTILE_SWITCH_6.3MM",
+      "pins": {
+        "1": "1",
+        "2": "2",
+        "3": "3",
+        "4": "4"
+      }
+    },
+    {
+      "ref": "S3",
+      "value": "",
+      "type": "other",
+      "package": "TACTILE_SWITCH_6.3MM",
+      "pins": {
+        "1": "1",
+        "2": "2",
+        "3": "3",
+        "4": "4"
+      }
+    },
+    {
+      "ref": "J3",
+      "value": "",
+      "type": "other",
+      "package": "STEREO-AUDIO-3.5MM-SWITCHED",
+      "pins": {
+        "1": "1",
+        "2": "2",
+        "3": "3",
+        "4": "4",
+        "5": "5"
+      }
+    },
+    {
+      "ref": "C1",
+      "value": "0.1uF",
+      "type": "ceramic_capacitor",
+      "package": "CAP-PTH-SMALL",
+      "pins": {
+        "1": "1",
+        "2": "2"
+      }
+    },
+    {
+      "ref": "C2",
+      "value": "0.1uF",
+      "type": "ceramic_capacitor",
+      "package": "CAP-PTH-SMALL",
+      "pins": {
+        "1": "1",
+        "2": "2"
+      }
+    },
+    {
+      "ref": "C4",
+      "value": "0.1uF",
+      "type": "ceramic_capacitor",
+      "package": "CAP-PTH-SMALL",
+      "pins": {
+        "1": "1",
+        "2": "2"
+      }
+    },
+    {
+      "ref": "C5",
+      "value": "0.1uF",
+      "type": "ceramic_capacitor",
+      "package": "CAP-PTH-SMALL",
+      "pins": {
+        "1": "1",
+        "2": "2"
+      }
+    },
+    {
+      "ref": "B1",
+      "value": "BATTERY-TERMINALS",
+      "type": "other",
+      "package": "BATTERY-TERMINALS",
+      "pins": {
+        "+": "+",
+        "-": "-"
+      }
+    },
+    {
+      "ref": "R11",
+      "value": "10K",
+      "type": "other",
+      "package": "TRIMPOT-72PTR",
+      "pins": {
+        "3": "A",
+        "1": "E",
+        "2": "S"
+      }
+    },
+    {
+      "ref": "R12",
+      "value": "10K",
+      "type": "other",
+      "package": "TRIMPOT-72PTR",
+      "pins": {
+        "3": "A",
+        "1": "E",
+        "2": "S"
+      }
+    },
+    {
+      "ref": "TOUCH1",
+      "value": "",
+      "type": "other",
+      "package": "PCB-TOUCHPAD2",
+      "pins": {
+        "1": "1",
+        "2": "2"
+      }
+    },
+    {
+      "ref": "TOUCH2",
+      "value": "",
+      "type": "other",
+      "package": "PCB-TOUCHPAD2",
+      "pins": {
+        "1": "1",
+        "2": "2"
+      }
+    },
+    {
+      "ref": "R10",
+      "value": "10K",
+      "type": "other",
+      "package": "TRIMPOT-3319P-1",
+      "pins": {
+        "A": "A",
+        "E": "E",
+        "S": "S"
+      }
+    },
+    {
+      "ref": "KB1",
+      "value": "",
+      "type": "other",
+      "package": "PCB-KEYBOARD4",
+      "pins": {
+        "A": "A",
+        "A#": "A#",
+        "B": "B",
+        "C": "C",
+        "C#": "C#",
+        "D": "D",
+        "D#": "D#",
+        "E": "E",
+        "F": "F",
+        "F#": "F#",
+        "G": "G",
+        "G#": "G#"
+      }
+    }
+  ],
+  "nets": [
+    {
+      "name": "GND",
+      "nodes": [
+        "J2.6",
+        "U1.22",
+        "U1.8",
+        "X1.P$2",
+        "J1.2",
+        "J1.1",
+        "SPKR1.-",
+        "U2.2",
+        "U2.4",
+        "C3.-",
+        "C6.-",
+        "C7.-",
+        "LED3.K",
+        "S1.3",
+        "S1.4",
+        "S2.1",
+        "S2.2",
+        "S3.1",
+        "S3.2",
+        "J3.1",
+        "C2.2",
+        "B1.-",
+        "TOUCH1.2",
+        "TOUCH2.2",
+        "R10.A",
+        "R11.3",
+        "R12.3"
+      ]
+    },
+    {
+      "name": "VCC",
+      "nodes": [
+        "U1.7",
+        "U1.20",
+        "J2.2",
+        "R1.P$2",
+        "R2.P$2",
+        "R3.P$2",
+        "R4.P$2",
+        "R5.P$2",
+        "R15.P$1",
+        "J1.3",
+        "U2.6",
+        "C3.+",
+        "LED1.A",
+        "LED2.A",
+        "C2.1",
+        "B1.+",
+        "R11.1",
+        "R12.1"
+      ]
+    },
+    {
+      "name": "N$2",
+      "nodes": [
+        "U1.9",
+        "X1.P$1"
+      ]
+    },
+    {
+      "name": "N$3",
+      "nodes": [
+        "U1.10",
+        "X1.P$3"
+      ]
+    },
+    {
+      "name": "RTS*",
+      "nodes": [
+        "J1.6",
+        "C1.2"
+      ]
+    },
+    {
+      "name": "B",
+      "nodes": [
+        "U1.27",
+        "R4.P$1",
+        "TOUCH1.1",
+        "KB1.B"
+      ]
+    },
+    {
+      "name": "RESET*",
+      "nodes": [
+        "J2.5",
+        "U1.1",
+        "R1.P$1",
+        "S1.1",
+        "S1.2",
+        "C1.1"
+      ]
+    },
+    {
+      "name": "A2",
+      "nodes": [
+        "U1.25",
+        "R2.P$1",
+        "S2.3",
+        "S2.4"
+      ]
+    },
+    {
+      "name": "N$5",
+      "nodes": [
+        "U2.5",
+        "C8.+"
+      ]
+    },
+    {
+      "name": "N$8",
+      "nodes": [
+        "U2.3",
+        "R10.S"
+      ]
+    },
+    {
+      "name": "N$10",
+      "nodes": [
+        "R6.P$2",
+        "C6.+",
+        "C4.1"
+      ]
+    },
+    {
+      "name": "C+",
+      "nodes": [
+        "U1.26",
+        "R3.P$1",
+        "S3.3",
+        "S3.4"
+      ]
+    },
+    {
+      "name": "A1",
+      "nodes": [
+        "U1.24",
+        "R12.2"
+      ]
+    },
+    {
+      "name": "A0",
+      "nodes": [
+        "U1.23",
+        "R11.2"
+      ]
+    },
+    {
+      "name": "A#",
+      "nodes": [
+        "U1.28",
+        "R5.P$1",
+        "TOUCH2.1",
+        "KB1.A#"
+      ]
+    },
+    {
+      "name": "A",
+      "nodes": [
+        "U1.4",
+        "KB1.A"
+      ]
+    },
+    {
+      "name": "G#",
+      "nodes": [
+        "U1.5",
+        "KB1.G#"
+      ]
+    },
+    {
+      "name": "G",
+      "nodes": [
+        "U1.6",
+        "KB1.G"
+      ]
+    },
+    {
+      "name": "F#",
+      "nodes": [
+        "U1.11",
+        "KB1.F#"
+      ]
+    },
+    {
+      "name": "F",
+      "nodes": [
+        "U1.12",
+        "KB1.F"
+      ]
+    },
+    {
+      "name": "D#",
+      "nodes": [
+        "U1.14",
+        "KB1.D#"
+      ]
+    },
+    {
+      "name": "N$14",
+      "nodes": [
+        "R15.P$2",
+        "LED3.A"
+      ]
+    },
+    {
+      "name": "TXD",
+      "nodes": [
+        "U1.3",
+        "R14.P$1",
+        "J1.5"
+      ]
+    },
+    {
+      "name": "MOSI/AUDIO-RIGHT",
+      "nodes": [
+        "U1.17",
+        "J2.4",
+        "R7.P$1"
+      ]
+    },
+    {
+      "name": "D",
+      "nodes": [
+        "U1.16",
+        "KB1.D"
+      ]
+    },
+    {
+      "name": "AUDIO-LEFT",
+      "nodes": [
+        "U1.15",
+        "R6.P$1"
+      ]
+    },
+    {
+      "name": "E",
+      "nodes": [
+        "U1.13",
+        "KB1.E"
+      ]
+    },
+    {
+      "name": "RXD",
+      "nodes": [
+        "U1.2",
+        "R13.P$1",
+        "J1.4"
+      ]
+    },
+    {
+      "name": "SCK",
+      "nodes": [
+        "J2.3",
+        "U1.19",
+        "KB1.C"
+      ]
+    },
+    {
+      "name": "MISO",
+      "nodes": [
+        "J2.1",
+        "U1.18",
+        "KB1.C#"
+      ]
+    },
+    {
+      "name": "N$1",
+      "nodes": [
+        "SPKR1.+",
+        "C8.-"
+      ]
+    },
+    {
+      "name": "N$4",
+      "nodes": [
+        "R7.P$2",
+        "C7.+",
+        "C5.1"
+      ]
+    },
+    {
+      "name": "N$6",
+      "nodes": [
+        "R8.P$2",
+        "J3.3"
+      ]
+    },
+    {
+      "name": "N$7",
+      "nodes": [
+        "R9.P$2",
+        "J3.4"
+      ]
+    },
+    {
+      "name": "N$9",
+      "nodes": [
+        "J3.2",
+        "C5.2"
+      ]
+    },
+    {
+      "name": "N$13",
+      "nodes": [
+        "J3.5",
+        "C4.2"
+      ]
+    },
+    {
+      "name": "N$16",
+      "nodes": [
+        "R8.P$1",
+        "R9.P$1",
+        "R10.E"
+      ]
+    },
+    {
+      "name": "N$11",
+      "nodes": [
+        "R13.P$2",
+        "LED1.K"
+      ]
+    },
+    {
+      "name": "N$12",
+      "nodes": [
+        "R14.P$2",
+        "LED2.K"
+      ]
+    }
+  ]
+}

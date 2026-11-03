@@ -1,0 +1,7 @@
+{
+ "photo": "data/raw/visa/pcb3/Data/Images/Normal/0657.JPG",
+ "board_id": "visa-pcb3",
+ "defects": [],
+ "label": "normal",
+ "split": "test"
+}

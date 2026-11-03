@@ -31,7 +31,7 @@ class GoldenProfile(BaseModel):
 class Suspect(BaseModel):
     golden_ref: str | None              # None for EXTRA
     cv_finding: FaultType
-    bbox: tuple[int, int, int, int]
+    bbox: tuple[int, int, int, int]     # the part's own box; its composite shows a wider crop
     evidence: dict[str, float]          # ssim, iou, offset_ratio, best_rotation_deg, rotation_margin
     composite_path: str
 
@@ -74,3 +74,44 @@ class Report(BaseModel):
     faults: list[Fault]
     timings_s: dict[str, float]
     versions: dict[str, str]            # model ids, prompt versions, config hash
+
+
+class Supply(BaseModel):
+    net: str
+    volts: float
+
+
+class Component(BaseModel):
+    ref: str
+    value: str = ""
+    type: str = "other"
+    package: str | None = None
+    pins: dict[str, str] = Field(default_factory=dict)  # pad name -> pin function
+
+
+class Net(BaseModel):
+    name: str
+    nodes: list[str]                    # "U1.8" is pad 8 of U1
+
+
+class Netlist(BaseModel):
+    board_id: str
+    description: str = ""
+    supply: Supply
+    components: list[Component]
+    nets: list[Net]
+
+
+class GroundTruthDefect(BaseModel):
+    ref: str | None = None              # None when only a defect mask is known
+    type: FaultType
+    mask: str | None = None             # pixel mask of the defect, in photo coordinates
+    accept: list[FaultType] = Field(default_factory=list)  # other finding types that also count
+
+
+class GroundTruth(BaseModel):
+    photo: str
+    board_id: str
+    defects: list[GroundTruthDefect]
+    label: str = ""                     # the source dataset's own label, for reporting
+    split: str = "test"                 # "dev" photos may tune thresholds, "test" photos may not

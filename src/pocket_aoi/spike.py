@@ -1,7 +1,7 @@
 """Block 1 calibration: run Stage 2 on each golden photo, count parts per class, suggest thresholds.
 
-Reads data/raw/<kit>/golden.jpg and an optional boards/<kit>/board.yaml holding hand counts, class
-prompts and labelled part positions, and writes overlays and raw detections to runs/spike/<kit>/.
+Reads data/raw/<kit>/golden.jpg, an optional boards/<kit>/board.yaml of hand counts and class prompts,
+and an optional refs.yaml of labelled part positions, and writes overlays and raw detections to runs/spike/<kit>/.
 A rerun reuses the saved detections unless told otherwise, so thresholds and merge rules can be
 retuned without running SAM again. Change the prompts and that reuse must be turned off.
 """
@@ -216,7 +216,8 @@ def run_kit(
     board_path = boards_dir / kit_dir.name / "board.yaml"
     kit_config = yaml.safe_load(board_path.read_text(encoding="utf-8")) if board_path.exists() else {}
     hand_counts = kit_config.get("counts", {})
-    labels = kit_config.get("parts", [])
+    refs_path = boards_dir / kit_dir.name / "refs.yaml"
+    labels = yaml.safe_load(refs_path.read_text(encoding="utf-8")).get("parts", []) if refs_path.exists() else []
     locate_prompt = segment_cfg["locate_prompt"]
     class_prompts = kit_prompts(kit_config, segment_cfg["class_prompts"])
     prompts = {locate_prompt: "other", **class_prompts}
