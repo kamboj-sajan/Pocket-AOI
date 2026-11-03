@@ -31,19 +31,40 @@ align:
   ransac_px: 3.0
   min_inliers: 50
   max_median_reproj_px: 2.0
-  min_board_iou: 0.97
+  min_board_iou: 0.97            # used when SIFT is not accepted, so the outline is the only evidence
+  min_board_iou_with_sift: 0.85  # guess, Block 1
+  sift_passes: 2
+  min_inliers_to_iterate: 12     # guess, Block 1
+  board_threshold: 0.5           # the right mask scored 0.68-0.95 on five real photos, the rest under 0.35
+  board_input_long_side: 1536    # SAM resizes its input anyway, so a 25 MP photo gains nothing
+  polygon_epsilon_ratio: 0.01    # guess, Block 1
+  max_quad_area_error: 0.25      # guess, Block 1
+  edge_tolerance_ratio: 0.004    # guess, Block 1: a share of the board's diagonal
+  edge_ransac_iterations: 400
+  retake:
+    border_touch_ratio: 0.05     # guess, Block 1
+    max_side_ratio: 1.25         # guess, Block 1
+    glare_value: 245             # guess, Block 1
+    max_glare_fraction: 0.05     # guess, Block 1
 
 segment:
-  board_prompt: printed circuit board
+  # "printed circuit board" scored only 0.07 on a white board; this scored 0.68-0.95 on all five test photos.
+  board_prompt: electronic circuit board
   # Prompt text sent to SAM -> PartClass. Add "IC socket", "potentiometer" or "connector" per kit.
   class_prompts:
-    electrolytic capacitor: electrolytic_capacitor
-    ceramic capacitor: ceramic_capacitor
-    resistor: resistor
+    # Chosen by scoring 35 prompts against hand-labelled parts on two real kits. "ceramic capacitor"
+    # scored 0 on both, and "transistor" and "diode" fire on almost every part.
+    cylindrical capacitor: electrolytic_capacitor
+    small round capacitor: ceramic_capacitor
+    striped resistor: resistor
     diode: diode
-    LED: led
-    integrated circuit: ic
+    colored LED: led
+    microchip: ic
     transistor: transistor
+  # Finds where every part is, whatever its kind: all 46 labelled parts on those two kits.
+  locate_prompt: electronic component
+  locate_threshold: 0.5        # lowest labelled part scored 0.52
+  label_match_iou: 0.25        # how closely a detection must sit on a hand-labelled box to count
   score_threshold: 0.4
   mask_threshold: 0.5
   class_score_thresholds: {}   # per-class overrides, calibrated on golden photos in Block 1
@@ -53,6 +74,13 @@ segment:
   specific_class_score_delta: 0.1
   min_part_area_ratio: 0.0002  # guess, Block 1
   max_part_area_ratio: 0.25    # guess, Block 1
+  min_inside_board: 0.9        # guess, Block 1
+  # Most specific first: on a close call between two prompts, the earlier class wins. "transistor"
+  # and "diode" fire on almost any part, so they rank last or they would beat "resistor" on resistors.
+  class_specificity: [led, ic, electrolytic_capacitor, resistor, ceramic_capacitor, transistor, diode, other]
+  spike_floor: 0.25            # the lowest score the calibration run keeps
+  spike_sweep: [0.3, 0.4, 0.5, 0.6, 0.7]
+  suggested_threshold_margin: 0.02
 
 compare:
   min_match_iou: 0.1

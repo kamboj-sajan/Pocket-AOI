@@ -1,4 +1,4 @@
-"""Command line entry point. Block 0 has the two smoke tests; later blocks add setup-board, inspect and eval."""
+"""Command line entry point: smoke tests, calibration and alignment so far; later blocks add setup-board, inspect and eval."""
 
 import argparse
 import io
@@ -126,6 +126,61 @@ def _cmd_smoke_sam(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_spike(args: argparse.Namespace) -> int:
+    """Calibrate Stage 2 on every golden photo under the kits folder."""
+    from functools import cache
+
+    from pocket_aoi.segment import Segmenter, resolve_model_id
+    from pocket_aoi.spike import run_spike
+
+    cfg = load_config()
+
+    # @cache remembers the first result, so the model loads at most once, and only if needed.
+    @cache
+    def make_segmenter() -> Segmenter:
+        return Segmenter(resolve_model_id(cfg))
+
+    run_spike(args.kits_dir, args.boards_dir, args.out, make_segmenter, cfg, fresh=args.fresh)
+    return 0
+
+
+def _cmd_align(args: argparse.Namespace) -> int:
+    """Warp a photo into the golden frame, and save the result with a checkerboard blend."""
+    import numpy as np
+    from PIL import Image
+
+    from pocket_aoi.align import checkerboard_blend
+    from pocket_aoi.pipeline import align_photo, load_golden_frame
+    from pocket_aoi.segment import Segmenter, resolve_model_id
+
+    cfg = load_config()
+    segmenter = Segmenter(resolve_model_id(cfg))
+    started = time.perf_counter()
+    golden = load_golden_frame(segmenter, load_rgb(args.golden), cfg)
+    result = align_photo(segmenter, load_rgb(args.photo), golden, cfg)
+    print(f"Canonical : {golden.size[0]} x {golden.size[1]}")
+
+    refinement = result.refinement
+    if refinement is None:
+        print("SIFT      : not enough matches, kept the quad-only warp")
+    else:
+        verdict = "accepted" if refinement.accepted else "rejected, kept the quad-only warp"
+        print(f"SIFT      : {refinement.inliers} inliers, median error {refinement.median_error_px:.2f} px, {verdict}")
+    print(f"Board IoU : {result.board_iou:.3f}")
+    print(f"Tilt      : opposite board edges differ by {result.tilt_ratio:.2f} times")
+    print(f"Time      : {time.perf_counter() - started:.1f} s")
+    print(f"Result    : {result.message}")
+
+    out_dir = args.out or REPO_ROOT / "runs" / "align" / args.photo.stem
+    out_dir.mkdir(parents=True, exist_ok=True)
+    Image.fromarray(golden.image).save(out_dir / "golden_canonical.png")
+    if result.image is not None:
+        Image.fromarray(result.image).save(out_dir / "aligned.png")
+        Image.fromarray(np.asarray(checkerboard_blend(golden.image, result.image))).save(out_dir / "checkerboard.png")
+        print(f"Saved     : aligned.png and checkerboard.png in {out_dir}")
+    return 0 if result.ok else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="pocket-aoi", description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -142,6 +197,19 @@ def main(argv: list[str] | None = None) -> int:
     smoke_sam.add_argument("--device", choices=["cuda", "mps", "cpu"], help="default picks the fastest available")
     smoke_sam.add_argument("--out", type=Path, default=REPO_ROOT / "runs" / "smoke" / "sam_overlay.png")
     smoke_sam.set_defaults(handler=_cmd_smoke_sam)
+
+    spike = commands.add_parser("spike", help="count parts on each golden photo and suggest thresholds")
+    spike.add_argument("--kits-dir", type=Path, default=REPO_ROOT / "data" / "raw")
+    spike.add_argument("--boards-dir", type=Path, default=REPO_ROOT / "boards")
+    spike.add_argument("--out", type=Path, default=REPO_ROOT / "runs" / "spike")
+    spike.add_argument("--fresh", action="store_true", help="run SAM again instead of reusing saved detections")
+    spike.set_defaults(handler=_cmd_spike)
+
+    align = commands.add_parser("align", help="warp a photo into the golden frame")
+    align.add_argument("--golden", type=Path, required=True)
+    align.add_argument("--photo", type=Path, required=True)
+    align.add_argument("--out", type=Path, help="default is runs/align/<photo name>/")
+    align.set_defaults(handler=_cmd_align)
 
     args = parser.parse_args(argv)
     # Functions are ordinary values in Python, so set_defaults stored the right one for this command.

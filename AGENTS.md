@@ -36,6 +36,20 @@ Checked against the live model repos and the installed packages. Where these dif
 - **SAM without CUDA:** section 2 says SAM 3.1 needs a CUDA GPU, but it also runs on an 8 GB M2 through MPS in float16: 11 s to load and 4–8 s per prompt on a 1920 × 2925 photo. No T4 has been timed yet.
 - **First look at part prompts** (one 1986 industrial board, not hand-counted, so not a result): DIP ICs were found with tight masks at 0.67–0.77. The IC prompt also masked the whole board at 0.57, so the Stage 2 area filter is required. Large resistors scored up to 0.66 as "electrolytic capacitor", so per-class thresholds and the class-merge rule need calibrating in Block 1.
 
+## Verified during Block 1 (3 Nov 2026)
+
+No hardware was available yet, so this block ran on web photos: two through-hole kits from Wikimedia Commons, and four boards from the VisA dataset. These numbers are calibration, not results. Section 7 still decides what the results table may claim.
+
+- **Speed:** `get_vision_features` encodes each view once, and each prompt then only runs the decoder. Compared with the direct path, masks are identical and scores differ by 0.0. Five views with 6–7 prompts take about 30 s per photo on an 8 GB M2, against an estimated 3 minutes without it.
+- **Board prompt:** "printed circuit board" scored 0.07 on a white board. "electronic circuit board" scored 0.68–0.95 on all five kit photos and is the default. SAM's board mask can exclude the parts themselves, so "on the board" tests use its filled convex hull.
+- **Where versus what:** "electronic component" found all 46 labelled parts and all 11 other objects on the two kits, lowest part score 0.73. No generic prompt names parts as reliably: "ceramic capacitor" scored 0 on both, and "transistor" and "diode" fire on almost everything. Class prompts got 25 of 25 right on one kit with prompts chosen for it, and 15 of 21 on the other, where "transistor" takes resistors. Good prompts come from `boards/<kit>/board.yaml`, as Stage 2 says, and can name colours ("red LED", "yellow capacitor").
+- **Counts mislead:** a class count can match the hand count while the detections sit on the wrong parts. Calibrate against labelled positions (`parts:` in `board.yaml`), and read the overlays.
+- **Quad fit:** a convex hull skews on overhanging connectors and pins. `fit_quad` tries `cv2.approxPolyDP`, then fits the contour's four straightest edges by RANSAC with a least-squares finish. Fixed-rig photos then read tilt 1.00–1.01, down from 1.20–1.25.
+- **Quality gate, changed from Stage 1 step 4:** SIFT runs in two passes, and only the second faces the 50-inlier, 2 px rule. With SIFT accepted, the filled-hull IoU must reach 0.85, because SAM's outline moves with overhanging parts and SIFT is direct evidence. Without it, the raw mask IoU must reach 0.97, because a quad-only warp fills the rectangle by construction. Tilt is checked separately.
+- **Known gaps in the gate:** a photo under bubble wrap passes, because the board is aligned though its parts are hidden. A steep telephoto shot passes at tilt 1.07, because opposite edges barely converge, though tall parts lean a long way. Stage 3 should show whether either matters.
+- **VisA:** real photos of real defects under CC BY 4.0, from a fixed camera with the board at varying rotations. It has about 60 photos with missing parts on `pcb1`–`pcb3`, and `pcb4` adds extra and misplaced parts on an SMD board. It has no reversed parts, so polarity cannot be measured from it.
+- **Proposed for Block 2, not yet built:** locate parts with one prompt, and take each part's class from its netlist ref rather than from SAM. Stage 3 would then match on position alone, and judge WRONG_PART by appearance.
+
 ## 1. Context and goal
 
 Build **Pocket AOI**: from one phone photo, find assembly mistakes on a through-hole circuit board by comparing it with a known-good golden board, and say what each mistake will break.
