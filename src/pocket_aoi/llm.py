@@ -28,6 +28,7 @@ PROMPTS_DIR = REPO_ROOT / "prompts"
 _PLACEHOLDER = re.compile(r"\{([a-z_]+)\}")
 
 _OUT_OF_CREDITS = 402
+_MAX_FAILURES_IN_A_ROW = 5
 
 # Like a C++ template parameter: complete_json returns the same model type it is given.
 SchemaT = TypeVar("SchemaT", bound=BaseModel)
@@ -139,6 +140,7 @@ class LLMClient:
             http_client=http_client,
         )
         self.use_response_format = True
+        self._failures_in_a_row = 0
 
     def complete(
         self,
@@ -182,10 +184,10 @@ class LLMClient:
         """Return a validated reply, retrying once with the error appended.
 
         Returns None if the reply stays invalid or the call fails, so the caller records
-        UNSURE and the run continues. A rejected API key or an empty account still raises,
-        because every later call would fail too, marking every part on the board UNSURE and
-        quietly corrupting an evaluation. An optional check adds rules that a schema cannot
-        express, returning an error message or None.
+        UNSURE and the run continues. A rejected API key, an empty account or a backend that
+        keeps failing still raises, because every later call would fail too, marking every
+        part on the board UNSURE and quietly corrupting an evaluation. An optional check adds
+        rules that a schema cannot express, returning an error message or None.
         """
         feedback = ""
         for _ in range(2):
@@ -193,6 +195,7 @@ class LLMClient:
                 reply = self.complete(
                     prompt, values, image=image, schema=schema, use_cache=use_cache, feedback=feedback
                 )
+                self._failures_in_a_row = 0
                 parsed = schema.model_validate_json(extract_json(reply))
                 problem = check(parsed) if check is not None else None
                 if problem is None:
@@ -209,7 +212,8 @@ class LLMClient:
                 raise
             except APIError as error:
                 # getattr with a default, because a connection error has no HTTP status at all.
-                if getattr(error, "status_code", None) == _OUT_OF_CREDITS:
+                self._failures_in_a_row += 1
+                if getattr(error, "status_code", None) == _OUT_OF_CREDITS or self._failures_in_a_row >= _MAX_FAILURES_IN_A_ROW:
                     raise
                 logger.warning("%s call failed: %s", prompt.id, error)
                 return None

@@ -113,7 +113,7 @@ verdict:
   fault_type_confidence: 0.6
   composite_min_part_px: 384
   composite_max_side_px: 1024
-  max_workers: 6                # calls at once; each one waits on the network, not the CPU
+  max_workers: 3                # calls at once, matching the Kaggle server's 3 slots; a hosted backend can take more
 
 report:
   overlay_long_side: 2400

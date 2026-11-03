@@ -207,6 +207,33 @@ def test_empty_account_raises_instead_of_reading_as_unsure(tmp_path: Path) -> No
     assert len(requests) == 1  # Retrying cannot help, so it stops at once.
 
 
+def test_backend_that_keeps_failing_raises_but_one_failure_does_not(tmp_path: Path) -> None:
+    status = {"code": 500}
+
+    def handler(_: httpx.Request) -> httpx.Response:
+        if status["code"] == 200:
+            return _chat_response(VALID_VERDICT)
+        return httpx.Response(status["code"], json={"error": {"message": "server gone"}})
+
+    client, _ = _client(tmp_path, handler)
+    values = {"ref": "C7", "ssim": 0.5}
+
+    # Four failures in a row each read as "no reply", so the run carries on.
+    for number in range(4):
+        assert client.complete_json(Verdict, VERDICT_PROMPT, {**values, "ref": f"C{number}"}, image=PNG_BYTES) is None
+
+    # A success resets the count, so scattered failures never stop a run.
+    status["code"] = 200
+    assert client.complete_json(Verdict, VERDICT_PROMPT, values, image=PNG_BYTES) is not None
+    status["code"] = 500
+    for number in range(4):
+        assert client.complete_json(Verdict, VERDICT_PROMPT, {**values, "ref": f"D{number}"}, image=PNG_BYTES) is None
+
+    # The fifth in a row means the backend is down, so it stops rather than marking everything UNSURE.
+    with pytest.raises(APIStatusError):
+        client.complete_json(Verdict, VERDICT_PROMPT, {**values, "ref": "E1"}, image=PNG_BYTES)
+
+
 def test_settings_repr_hides_the_api_key(tmp_path: Path) -> None:
     client, _ = _client(tmp_path, lambda _: _chat_response(""))
     assert "test-key" not in repr(client.settings)
