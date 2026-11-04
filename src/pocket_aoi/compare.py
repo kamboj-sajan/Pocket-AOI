@@ -186,18 +186,6 @@ def appearance(
     )
 
 
-def _edge_magnitude(image: np.ndarray) -> np.ndarray:
-    gx = cv2.Sobel(image, cv2.CV_32F, 1, 0, ksize=3)
-    gy = cv2.Sobel(image, cv2.CV_32F, 0, 1, ksize=3)
-    return cv2.magnitude(gx, gy)
-
-
-def _correlation(first: np.ndarray, second: np.ndarray) -> float:
-    first_centred, second_centred = first - first.mean(), second - second.mean()
-    scale = float(np.linalg.norm(first_centred) * np.linalg.norm(second_centred))
-    return float((first_centred * second_centred).sum() / scale) if scale > 1e-6 else 0.0
-
-
 def rotation_test(
     golden_gray: np.ndarray,
     test_gray: np.ndarray,
@@ -205,29 +193,35 @@ def rotation_test(
     angles: Sequence[int],
     compare_cfg: Mapping[str, Any],
 ) -> tuple[int, float]:
-    """Compare the test part with the golden part turned by each angle, on SSIM plus edge correlation.
+    """Slide the golden part, turned by each angle, over the test part, and compare the best matches.
 
-    Returns the best angle, and how far it beats 0 degrees. A non-zero angle winning clearly
-    means the part sits turned. The crop is square and tight, so turning it keeps the part in frame.
+    Returns the best angle, and how far it beats 0 degrees. A non-zero angle winning clearly means
+    the part sits turned. Only the part's own pixels are compared, because a reversed part sits among
+    unchanged surroundings, and on real photos those outweighed it and pulled every answer to 0 degrees.
+    Sliding absorbs a part's lean, and normalised correlation ignores overall brightness.
     """
-    x0, y0, x1, y1 = box
-    centre_x, centre_y = (x0 + x1) / 2, (y0 + y1) / 2
-    half = int(max(x1 - x0, y1 - y0) * (0.5 + compare_cfg["rotation_crop_margin"])) + 1
+    x0, y0, x1, y1 = (int(value) for value in box)
     height, width = golden_gray.shape
-    left, top = int(centre_x) - half, int(centre_y) - half
-    right, bottom = int(centre_x) + half, int(centre_y) + half
-    if left < 0 or top < 0 or right > width or bottom > height or half * 2 < _MIN_CROP_SIDE:
+    x0, y0, x1, y1 = max(x0, 0), max(y0, 0), min(x1, width), min(y1, height)
+    box_width, box_height = x1 - x0, y1 - y0
+    if min(box_width, box_height) < _MIN_CROP_SIDE:
         return 0, 0.0
 
-    golden_crop = golden_gray[top:bottom, left:right]
-    test_crop = test_gray[top:bottom, left:right]
-    test_edges = _edge_magnitude(test_crop)
+    search_px = max(int(compare_cfg["rotation_search_ratio"] * max(box_width, box_height)), 2)
+    # A quarter turn swaps the template's sides, so the search area must fit the longer side both ways.
+    quarter_turns = any(angle % 180 for angle in angles)
+    pad_x = search_px + (max(box_height - box_width, 0) // 2 if quarter_turns else 0)
+    pad_y = search_px + (max(box_width - box_height, 0) // 2 if quarter_turns else 0)
+    area = test_gray[max(y0 - pad_y, 0) : y1 + pad_y, max(x0 - pad_x, 0) : x1 + pad_x]
+
+    template = golden_gray[y0:y1, x0:x1]
     scores: dict[int, float] = {}
     for angle in angles:
         # rot90 turns counter-clockwise in quarter turns, so k is the angle over 90.
-        turned = np.rot90(golden_crop, k=angle // 90)
-        ssim_score, _ = _ssim_map(turned, test_crop)
-        scores[angle] = 0.5 * ssim_score + 0.5 * _correlation(_edge_magnitude(turned), test_edges)
+        turned = np.rot90(template, k=angle // 90)
+        if turned.shape[0] > area.shape[0] or turned.shape[1] > area.shape[1]:
+            return 0, 0.0  # The part is cut off by the frame's edge, so no fair comparison exists.
+        scores[angle] = float(cv2.matchTemplate(area, turned, cv2.TM_CCOEFF_NORMED).max())
     best = max(scores, key=lambda angle: scores[angle])
     return best, scores[best] - scores[0]
 
@@ -255,15 +249,17 @@ def classify_part(
         gone = look.ssim < compare_cfg["missing_ssim"] or look.diff_fraction > compare_cfg["missing_diff_fraction"]
         return "MISSING" if gone else None
 
-    if part.polarized and best_angle != 0 and rotation_margin > compare_cfg["rotation_margin"]:
-        return "REVERSED" if best_angle == 180 else "ROTATED"
-
     _, iou = matched
     looks_changed = (
         look.ssim < compare_cfg["same_appearance_ssim"] or look.diff_fraction > compare_cfg["same_appearance_diff_fraction"]
     )
+    # This comes first because a part that moved no longer sits where the rotation test looks, so its answer means nothing.
     if looks_changed and (offset_ratio > compare_cfg["shifted_offset_ratio"] or iou < compare_cfg["shifted_min_iou"]):
         return "SHIFTED"
+
+    if part.polarized and best_angle != 0 and rotation_margin > compare_cfg["rotation_margin"]:
+        return "REVERSED" if best_angle == 180 else "ROTATED"
+
     far_off = (
         look.ssim < compare_cfg["wrong_part_ssim"]
         or look.low_fraction > compare_cfg["wrong_part_low_fraction"]

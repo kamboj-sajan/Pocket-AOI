@@ -177,7 +177,8 @@ def build_golden_parts(
             best = None
         if best is not None:
             remaining.remove(best)
-        parts.append(_make_part(label["ref"], label.get("cls", "other"), best, label["box"], size, netlist, cfg))
+        part = _make_part(label["ref"], label.get("cls", "other"), best, label["box"], size, netlist, cfg)
+        parts.append(part.model_copy(update={"marker_hint": label.get("marker_hint")}))
     parts.extend(_make_part(None, "other", part, None, size, netlist, cfg) for part in remaining)
     return parts
 

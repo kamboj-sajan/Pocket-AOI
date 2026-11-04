@@ -20,6 +20,7 @@ class Part(BaseModel):
     score: float
     package: str | None                 # "DIP-8", "TO-92", "radial"
     polarized: bool
+    marker_hint: str | None = None      # where the polarity marker sits on the golden part, e.g. "band at the bottom end"
 
 
 class GoldenProfile(BaseModel):

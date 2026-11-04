@@ -50,6 +50,20 @@ No hardware was available yet, so this block ran on web photos: two through-hole
 - **VisA:** real photos of real defects under CC BY 4.0, from a fixed camera with the board at varying rotations. It has about 60 photos with missing parts on `pcb1`–`pcb3`, and `pcb4` adds extra and misplaced parts on an SMD board. It has no reversed parts, so polarity cannot be measured from it.
 - **Proposed for Block 2, not yet built:** locate parts with one prompt, and take each part's class from its netlist ref rather than from SAM. Stage 3 would then match on position alone, and judge WRONG_PART by appearance.
 
+## Verified during Blocks 2 and 3 (3–4 Nov 2026)
+
+No hardware became available, so the evaluation uses public photos of real defects. Where these differ from a later section, these win.
+
+- **Backend:** OpenRouter's free allowance stopped at about $0.15, after 149 verdicts. Glimmer now runs on Kaggle's 2× T4 through `notebooks/serve_glimmer_kaggle.ipynb`, at about 2 replies per minute. Its 3 parallel slots add no throughput. A session's tunnel died after 10.7 hours of replies, which ended the test run at photo 117 of 134. Rerunning the notebook and the same command resumes it, because saved replies are reused.
+- **Test set size:** at that speed the full VisA test split would take about 10 hours. `eval --clean-per-board 10` keeps all 94 defect photos and 10 clean photos per board, 134 of 254, drawn by a fixed seed before any test result was read.
+- **Coarse comparison:** full-size SSIM fell to 0.4 on clean parts, so crops shrink to a 32 px shorter side before SSIM and colour difference.
+- **Rotation test, changed from Stage 3 step 3:** the square crop with its surroundings called 0 of 69 real reversed parts REVERSED, because unchanged surroundings outweigh the part. It only ever passed on synthetic defects. `rotation_test` now slides the part's own pixels with normalised correlation, which found no turned parts on the VisA dev photos and left their numbers unchanged. It is still weak on real parts: 7 of 45 on dev shots.
+- **Reversed parts, measured:** the PCBA set on Roboflow has real ones on one board design, and `eval/run_polarity_eval.py` scores them. Its 640 × 640 close-ups skip Stages 1 and 2. On 24 held-out reversed parts, 8 were confirmed REVERSED and 11 as any fault, with 5 false alarms on 25 unlabelled parts. All 13 misses were parts Stage 3 never flagged, so Glimmer never saw them.
+- **Always asking Glimmer, tried and rejected:** on 24 dev pairs, with a pass mark set beforehand of at least 8 of 12 reversed parts called REVERSED and at most 2 of 10 correct parts flagged, it reached 7 of 12 and 5 of 10. A pre-check reading REVERSED made it say REVERSED on 12 of 12 reversed parts and 8 of 12 others, so that text leads it.
+- **Marker hints:** `Part.marker_hint` fills `{golden_marker_hint}`. On those same pairs, hints raised REVERSED calls on reversed parts from 3 to 7 of 12.
+- **Labels:** an unlabelled part in PCBA is not always correct. Two of 12 sampled "correct" parts showed empty pads.
+- **Banner, changed from Stage 6 step 2:** with that miss rate the report must not call a board safe. "Safe to power: NO" stays, and every other banner tells the user to check polarized parts by eye.
+
 ## 1. Context and goal
 
 Build **Pocket AOI**: from one phone photo, find assembly mistakes on a through-hole circuit board by comparing it with a known-good golden board, and say what each mistake will break.

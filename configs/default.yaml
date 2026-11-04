@@ -102,7 +102,7 @@ compare:
   wrong_part_diff_fraction: 0.5
   shifted_offset_ratio: 0.3
   shifted_min_iou: 0.5
-  rotation_crop_margin: 0.05
+  rotation_search_ratio: 0.05   # how far the part may lean in the rotation test, as a share of its longer side
   rotation_margin: 0.08
   extra_max_golden_overlap: 0.3
   extra_ssim: 0.45
@@ -121,11 +121,12 @@ report:
 eval:
   min_defect_overlap: 0.3   # a finding counts if it overlaps a defect mask by this share of the smaller area
   min_in_frame_share: 0.25  # below this share inside the board outline, a defect is out of the camera frame we compare
+  clean_sample_seed: 2026   # picks the clean photos for --clean-per-board, fixed before any test result was seen
 
 polarized_classes: [electrolytic_capacitor, diode, led, ic, transistor]
 
 polarity_hints:
-  electrolytic_capacitor: light stripe with minus signs on the can sleeve marks the negative lead
+  electrolytic_capacitor: a stripe on the can sleeve, or a black crescent on the can's top face, marks the negative lead
   diode: painted band at one end marks the cathode
   led: flat edge on the rim marks the cathode
   ic: notch or dot at the pin-1 end

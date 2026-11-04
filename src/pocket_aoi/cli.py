@@ -309,7 +309,7 @@ def _cmd_eval(args: argparse.Namespace) -> int:
 
     # eval/ sits beside src/, so its folder's parent must be on the import path.
     sys.path.insert(0, str(REPO_ROOT))
-    from eval.run_eval import load_ground_truth, run_eval
+    from eval.run_eval import load_ground_truth, run_eval, sample_clean_photos
 
     cfg = load_config()
     try:
@@ -318,6 +318,8 @@ def _cmd_eval(args: argparse.Namespace) -> int:
         print(f"ERROR: {error}", file=sys.stderr)
         return 2
     records = load_ground_truth(args.gt, args.split, args.board)
+    if args.clean_per_board is not None:
+        records = sample_clean_photos(records, args.clean_per_board, cfg["eval"]["clean_sample_seed"])
     print(f"{len(records)} photos")
     try:
         run_eval(records, _segmenter_factory(cfg), client, cfg, args.tag)
@@ -378,6 +380,7 @@ def main(argv: list[str] | None = None) -> int:
     evaluate.add_argument("--gt", type=Path, default=REPO_ROOT / "eval" / "ground_truth")
     evaluate.add_argument("--split", choices=["dev", "test"], help="default is every photo")
     evaluate.add_argument("--board", help="default is every board")
+    evaluate.add_argument("--clean-per-board", type=int, help="keep every defect photo, and this many clean photos per board; default is every photo")
     evaluate.add_argument("--tag", default="cv", help="results go to runs/eval/<tag>/")
     evaluate.add_argument("--cv-only", action="store_true", help="stop after Stage 3, without calling Muse Glimmer")
     evaluate.set_defaults(handler=_cmd_eval)

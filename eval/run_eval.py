@@ -1,7 +1,9 @@
 """Run the pipeline on every ground-truth photo, and score it. Results land in runs/eval/<tag>/."""
 
 import json
+import random
 import time
+from collections import defaultdict
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -59,6 +61,26 @@ def load_ground_truth(folder: Path, split: str | None, board: str | None) -> lis
         for record in records
         if (split is None or record.split == split) and (board is None or record.board_id == board)
     ]
+
+
+def sample_clean_photos(records: Sequence[GroundTruth], per_board: int, seed: int) -> list[GroundTruth]:
+    """Keep every defect photo and a fixed random set of clean photos per board, in their original order.
+
+    The draw depends only on the seed and the board, never on results. A larger per_board keeps the
+    smaller set and adds to it, so a later, bigger run reuses every saved reply.
+    """
+    clean: dict[str, list[str]] = defaultdict(list)
+    for record in records:
+        if not record.defects:
+            clean[record.board_id].append(record.photo)
+
+    kept: set[str] = set()
+    for board_id, photos in clean.items():
+        # A Random seeded with a string gives the same draw on every run and machine.
+        shuffled = sorted(photos)
+        random.Random(f"{seed}:{board_id}").shuffle(shuffled)
+        kept.update(shuffled[:per_board])
+    return [record for record in records if record.defects or record.photo in kept]
 
 
 def _load_defect_mask(mask_path: str) -> np.ndarray:

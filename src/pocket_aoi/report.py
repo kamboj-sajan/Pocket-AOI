@@ -127,9 +127,9 @@ CARD_STYLE = """
   :root { --bg: #14171a; --panel: #1d2125; --ink: #eceff2; --muted: #a2abb5; --line: #333a41; }
 }
 .card h2 { font-size: 1.05rem; margin: 0; }
-.card img { display: block; width: 100%; height: auto; border-radius: 6px; margin: 8px 0; }
+.card img { display: block; width: 100%; height: auto; max-height: 420px; object-fit: contain; border-radius: 6px; margin: 8px 0; }
 .banner { padding: 12px 16px; border-radius: 8px; font-weight: 700; margin-bottom: 16px; color: #fff; }
-.banner.no { background: #b3261e; } .banner.yes { background: #1b7f3b; } .banner.check { background: #a85b00; }
+.banner.no { background: #b3261e; } .banner.check { background: #a85b00; }
 .card { background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; margin: 14px 0; }
 .head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .chip { font-size: .75rem; font-weight: 700; padding: 2px 8px; border-radius: 99px; color: #000; }
@@ -148,12 +148,12 @@ h1 { font-size: 1.4rem; margin: 0 0 12px; }
 
 
 def banner_text(report: Report) -> tuple[str, str]:
-    """Return the banner's text and style. It only says yes when nothing at all was flagged."""
+    """Return the banner's text and style. It never calls a board safe, because reversed parts are often missed."""
     if not report.safe_to_power:
         return "Safe to power: NO", "no"
     if report.faults:
-        return f"Safe to power: no critical fault, but {len(report.faults)} to check first", "check"
-    return "Safe to power: YES, no differences from the golden board", "yes"
+        return f"No critical fault found, but {len(report.faults)} to check first. Check polarized parts by eye before powering.", "check"
+    return "No faults found. Check polarized parts by eye before powering: reversed parts can be missed.", "check"
 
 
 def render_html(report: Report, overlay_path: Path) -> str:

@@ -10,7 +10,8 @@ import numpy as np
 import pytest
 
 from eval.metrics import PhotoResult, format_ablation, summarise_by_label
-from eval.run_eval import Claim, score_photo, share_in_frame
+from eval.run_eval import Claim, sample_clean_photos, score_photo, share_in_frame
+from eval.run_polarity_eval import label_box, pick_shots, status_in_shot
 from pocket_aoi.config import load_config
 from pocket_aoi.consequence import (
     add_consequences,
@@ -300,10 +301,10 @@ def _report(faults: list[Fault]) -> Report:
     )
 
 
-def test_banner_never_says_yes_when_anything_was_flagged() -> None:
+def test_banner_is_red_for_a_critical_fault_and_amber_otherwise() -> None:
     assert banner_text(_report([_fault("C1", "CRITICAL")])) == ("Safe to power: NO", "no")
     assert banner_text(_report([_fault("R1", "MINOR")]))[1] == "check"
-    assert banner_text(_report([]))[1] == "yes"
+    assert banner_text(_report([]))[1] == "check"
 
 
 def test_overlay_draws_through_the_inverse_homography() -> None:
@@ -360,6 +361,57 @@ def _board(tmp_path: Path) -> GoldenBoard:
     frame = GoldenFrame(image, np.ones((100, 200), bool), np.eye(3), (200, 100))
     profile = GoldenProfile(board_id="b", canonical_size=(200, 100), parts=[])
     return GoldenBoard("b", profile, image, mask_to_rle(np.ones((100, 200), bool)), frame, None)
+
+
+def test_clean_sample_keeps_defect_photos_and_only_grows_as_it_gets_larger() -> None:
+    defect = GroundTruth(photo="a/defect.jpg", board_id="a", defects=[GroundTruthDefect(ref="C1", type="MISSING")])
+    clean = [GroundTruth(photo=f"{board}/{i:02}.jpg", board_id=board, defects=[]) for board in "ab" for i in range(20)]
+    records = [defect, *clean]
+
+    small = sample_clean_photos(records, 3, seed=1)
+    large = sample_clean_photos(records, 8, seed=1)
+
+    assert defect in small
+    assert sum(r.board_id == "a" and not r.defects for r in small) == 3
+    assert sum(r.board_id == "b" and not r.defects for r in small) == 3
+    assert {r.photo for r in small} <= {r.photo for r in large}
+    assert small == sample_clean_photos(records, 3, seed=1)
+    assert small == [r for r in records if r in small]
+    assert len(sample_clean_photos(records, 99, seed=1)) == len(records)
+
+
+def test_marker_hint_reaches_the_prompt_and_defaults_to_unknown() -> None:
+    plain = Part(ref="D1", cls="diode", bbox=(0, 0, 9, 9), centroid=(4, 4), mask_rle={}, score=1.0, package=None, polarized=True)
+    hinted = plain.model_copy(update={"marker_hint": "band at the bottom end"})
+    assert prompt_values(_suspect("D1"), plain, None, CFG)["golden_marker_hint"] == "unknown"
+    assert prompt_values(_suspect("D1"), hinted, None, CFG)["golden_marker_hint"] == "band at the bottom end"
+
+
+def test_banner_never_calls_a_board_safe() -> None:
+    assert "safe" not in banner_text(_report([]))[0].lower()
+    assert "by eye" in banner_text(_report([]))[0]
+    assert "by eye" in banner_text(_report([_fault("R1", "MINOR")]))[0]
+
+
+def test_polarity_eval_prefers_an_unaugmented_copy_of_each_shot() -> None:
+    records = [
+        {"id": "b", "name": "one.jpg", "split": "train", "boxes": []},
+        {"id": "a", "name": "one.jpg", "split": "test", "boxes": []},
+        {"id": "c", "name": "two.jpg", "split": "train", "boxes": []},
+    ]
+    shots = pick_shots(records)
+    assert shots["one.jpg"]["id"] == "a" and shots["two.jpg"]["id"] == "c"
+
+
+def test_polarity_eval_reads_a_parts_state_from_labels_of_its_own_kind() -> None:
+    box = (100.0, 100.0, 140.0, 200.0)
+    centre = {"x": 120, "y": 150, "width": 40, "height": 100}
+    assert label_box(centre) == box
+    assert status_in_shot({"boxes": [{"label": "Diode Opposite polarity", **centre}]}, box, "D1") == "REVERSED"
+    assert status_in_shot({"boxes": [{"label": "Diode-missed-welding", **centre}]}, box, "D1") == "MISSING"
+    assert status_in_shot({"boxes": [{"label": "R-missed-welding", **centre}]}, box, "D1") == "OK"
+    assert status_in_shot({"boxes": [{"label": "Diode Opposite polarity", "x": 400, "y": 400, "width": 40, "height": 100}]}, box, "D1") == "OK"
+    assert status_in_shot({"boxes": [{"label": "Diode Opposite polarity", **centre}]}, box, "E1") == "OK"
 
 
 def test_share_in_frame_counts_pixels_landing_inside() -> None:

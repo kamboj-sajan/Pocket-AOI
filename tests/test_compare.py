@@ -240,6 +240,16 @@ def test_golden_parts_get_refs_from_labels_and_classes_from_the_netlist() -> Non
     assert parts[1].ref is None  # A real object outside the inspection list.
 
 
+def test_golden_label_passes_on_its_marker_hint() -> None:
+    labels = [
+        {"ref": "D1", "cls": "diode", "box": [10, 20, 50, 40], "marker_hint": "band at the bottom end"},
+        {"ref": "R1", "cls": "resistor", "box": [60, 20, 100, 40]},
+    ]
+    hinted, plain = build_golden_parts([], labels, SIZE, None, CFG)
+    assert hinted.marker_hint == "band at the bottom end"
+    assert plain.marker_hint is None
+
+
 def test_golden_label_with_no_mask_uses_its_box() -> None:
     parts = build_golden_parts([], [{"ref": "R1", "cls": "resistor", "box": [10, 20, 50, 40]}], SIZE, None, CFG)
     assert parts[0].bbox == (10, 20, 50, 40) and parts[0].score == 0.0

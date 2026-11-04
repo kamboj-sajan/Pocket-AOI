@@ -42,7 +42,7 @@ def prompt_values(
         "package": (part.package if part else None) or "unknown",
         "value": (component.value if component else "") or "unknown",
         "polarity_hint": cfg["polarity_hints"].get(part.cls if part else "", "none"),
-        "golden_marker_hint": "unknown",
+        "golden_marker_hint": (part.marker_hint if part else None) or "unknown",
         "cv_finding": suspect.cv_finding,
         "ssim": float(evidence.get("ssim", 0.0)),
         "best_rotation_deg": int(evidence.get("best_rotation_deg", 0)),

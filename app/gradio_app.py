@@ -13,6 +13,7 @@ from typing import Any
 import gradio as gr
 import numpy as np
 import yaml
+from openai import APIError
 from PIL import Image
 
 from pocket_aoi.config import REPO_ROOT, load_config
@@ -21,6 +22,7 @@ from pocket_aoi.pipeline import (
     BOARDS_DIR,
     inspect_photo,
     load_golden_board,
+    read_yaml,
     relabel_board,
     setup_board,
 )
@@ -37,6 +39,12 @@ CAPTURE_GUIDE = """
 **Taking the photo.** Hold the phone 25–35 cm above and roughly parallel to the board, with the board
 filling most of the frame. Use diffuse light with no flash, on a plain background that contrasts with the board.
 """
+
+# The error's own text stays out of this message, because a --share page is public.
+BACKEND_DOWN = (
+    "Muse Glimmer did not answer, so this photo was not fully inspected. If it runs on Kaggle, "
+    "rerun the notebook, paste its new LLM_ lines into .env, and restart this page."
+)
 
 
 # @cache keeps the first result, so SAM and the client are each built once, and only when first used.
@@ -83,6 +91,8 @@ def find_parts(board_id: str, golden: str | None, netlist: str | None) -> tuple[
             refs = read_refs(get_client(), board.image, profile.parts, board.netlist, CFG)
         except ValueError as error:  # The .env file has no LLM key, so the refs stay for typing by hand.
             refs, note = [None] * len(rows), f"{note} Silkscreen reading was skipped: {error}"
+        except APIError:  # The backend is down, which also leaves the refs for typing by hand.
+            refs, note = [None] * len(rows), f"{note} Silkscreen reading was skipped: Muse Glimmer did not answer."
         for row, ref in zip(rows, refs):
             row[0] = ref or ""
     return _overlay(board_id, profile), rows, note
@@ -96,11 +106,18 @@ def save_refs(board_id: str, table: Any) -> tuple[Any, str, Any]:
     # A Gradio Dataframe can arrive as a pandas table; values.tolist() gives plain lists of rows.
     rows: Sequence[Sequence[Any]] = table.values.tolist() if hasattr(table, "values") else table
 
+    # The table has no column for marker hints, so carry over any already typed into refs.yaml.
+    hints = {label["ref"]: label["marker_hint"] for label in read_yaml(board_dir / "refs.yaml").get("parts", []) if label.get("marker_hint")}
+
     labels, unnamed = [], 0
     for row in rows:
         box = [int(float(value)) for value in row[2:6]]
-        if str(row[0]).strip():
-            labels.append({"ref": str(row[0]).strip(), "cls": str(row[1]), "box": box})
+        ref = str(row[0]).strip()
+        if ref:
+            label = {"ref": ref, "cls": str(row[1]), "box": box}
+            if ref in hints:
+                label["marker_hint"] = hints[ref]
+            labels.append(label)
         else:
             unnamed += 1
     (board_dir / "refs.yaml").write_text(yaml.safe_dump({"parts": labels}, default_flow_style=None), encoding="utf-8")
@@ -124,7 +141,10 @@ def inspect(board_id: str | None, photo: str | None) -> tuple[str, np.ndarray | 
 
     board = load_golden_board(board_id, CFG)
     run_dir = REPO_ROOT / "runs" / "app" / f"{board_id}_{int(time.time())}"
-    result = inspect_photo(Path(photo), board, get_segmenter, client, CFG, run_dir)
+    try:
+        result = inspect_photo(Path(photo), board, get_segmenter, client, CFG, run_dir)
+    except APIError as error:
+        raise gr.Error(BACKEND_DOWN) from error
     if not result.ok or result.report is None:
         return f'<div class="banner check">{result.message}</div>', None, ""
 
