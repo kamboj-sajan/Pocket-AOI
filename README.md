@@ -4,6 +4,24 @@ From one phone photo, find assembly mistakes on a circuit board by comparing it 
 
 Built for the Meta Global AI Developer Hackathon (manufacturing). The full spec is in [AGENTS.md](AGENTS.md).
 
+## What was built during the hackathon
+
+The hackathon began on 26 Oct 2026. This repo's first commit is dated 3 Nov 2026 and there was no earlier codebase, so `git log` shows the whole history.
+
+**Built during the hackathon:**
+
+- The pipeline in `src/pocket_aoi/`: board setup, alignment, part location, comparison, verdicts, consequences and the report, including the rule that Muse Glimmer can only confirm or reject what classical vision raises
+- The prompts in `prompts/`, and the checks that reject replies citing parts, pads or nets not in the netlist
+- The pin-swap table and severity rules
+- The Gradio page in `app/`, and the Kaggle notebook in `notebooks/`
+- The evaluation in `eval/`, and every result in this README
+
+**Not built here, and used as they are:**
+
+- SAM 3.1 and Muse Glimmer 30B, Meta's models
+- The VisA and PCBA datasets, and the kit photos and ArduTouch schematic listed under [Data and credits](#data-and-credits)
+- The open-source libraries in `pyproject.toml`, such as PyTorch, transformers, OpenCV and Gradio
+
 ## The problem
 
 In student labs, assembly mistakes cost more debugging time than design errors: a reversed electrolytic, an IC seated backwards, a missing resistor. Factory optical inspection machines cost tens of thousands of dollars, so students, makers and small shops inspect by eye.
@@ -196,7 +214,7 @@ Apart from the small crops in `docs/results/`, none of these photos are stored i
 
 - [VisA dataset](https://github.com/amazon-science/spot-diff) by Zou et al., CC BY 4.0: real photos of real defects, used for the main results and the crops in `docs/results/`
 - [PCBA dataset](https://universe.roboflow.com/123-1fark/pcba-lw1r1) by user 123 on Roboflow Universe, CC BY 4.0: real photos of real reversed parts, used for the reversed-part test
-- ArduTouch kit by [Mitch Altman](https://commons.wikimedia.org/wiki/File:ArduTouch_music_synthesizer_Rev_C_Assembled,_by_Cornfield_Electronics_(2023-03-19_12.20.37_by_Mitch_Altman_@Flickr_52930161269).jpg), CC BY-SA 2.0, with its [design files](https://github.com/maltman23/ArduTouch) as the source of the demo board's netlist
+- ArduTouch kit by [Mitch Altman](https://commons.wikimedia.org/wiki/File:ArduTouch_music_synthesizer_Rev_C_Assembled,_by_Cornfield_Electronics_(2023-03-19_12.20.37_by_Mitch_Altman_@Flickr_52930161269).jpg), CC BY-SA 2.0, with its [design files](https://github.com/maltman23/ArduTouch), whose schematic is CC BY-SA 3.0, as the source of the demo board's netlist
 - Electronic die kit by Raimond Spekking ([top-down](https://commons.wikimedia.org/wiki/File:Assembled_Kit_for_electronic_cube-2461.jpg), [angled](https://commons.wikimedia.org/wiki/File:Assembled_Kit_for_electronic_cube-2460.jpg)), CC BY-SA 4.0
 
 ## Licence
@@ -205,4 +223,4 @@ The code, prompts and configs are under the [MIT License](LICENSE). It does not 
 
 - **Models:** SAM 3.1 is under the SAM License and Muse Glimmer 30B under Apache 2.0. Neither is stored in this repo.
 - **`docs/results/` and `eval/ground_truth/visa/`:** crops and labels from VisA, CC BY 4.0.
-- **`boards/`:** part labels for the third-party boards credited above, and the ArduTouch netlist. The ArduTouch repo's README and top folder state no licence, so check with its author before reusing that netlist.
+- **`boards/`:** part labels for the third-party boards credited above, and `boards/ardutouch/netlist.json`, which comes from the ArduTouch schematic and is shared under that schematic's CC BY-SA 3.0.
