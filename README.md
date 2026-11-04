@@ -2,7 +2,7 @@
 
 From one phone photo, find assembly mistakes on a circuit board by comparing it with a known-good golden board, and say what each mistake will break.
 
-Built for the Meta Global AI Developer Hackathon (manufacturing). The full spec is in [AGENTS.md](AGENTS.md).
+Built for the Meta Global AI Developer Hackathon (manufacturing). Watch the [3-minute demo video](https://youtu.be/38sRM_zsY7Y). The full spec is in [AGENTS.md](AGENTS.md).
 
 ## What was built during the hackathon
 
