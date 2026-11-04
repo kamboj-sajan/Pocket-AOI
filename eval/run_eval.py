@@ -83,7 +83,7 @@ def sample_clean_photos(records: Sequence[GroundTruth], per_board: int, seed: in
     return [record for record in records if record.defects or record.photo in kept]
 
 
-def _load_defect_mask(mask_path: str) -> np.ndarray:
+def load_defect_mask(mask_path: str) -> np.ndarray:
     with Image.open(REPO_ROOT / mask_path) as image:
         return np.asarray(image.convert("L")) > 0
 
@@ -105,7 +105,7 @@ def share_in_frame(mask: np.ndarray, homography: np.ndarray, size: tuple[int, in
     return float(inside.mean())
 
 
-def _on_defect(claim: Claim, ref: str | None, canonical_mask: np.ndarray | None, min_overlap: float) -> bool:
+def on_defect(claim: Claim, ref: str | None, canonical_mask: np.ndarray | None, min_overlap: float) -> bool:
     """A claim is on a defect when it names the same ref, or for mask labels when the two overlap."""
     if ref is not None:
         return claim.ref == ref
@@ -142,12 +142,12 @@ def score_photo(
         canonical_mask = None
         off_board = False
         if defect.mask is not None:
-            mask = _load_defect_mask(defect.mask)
+            mask = load_defect_mask(defect.mask)
             off_board = share_in_frame(mask, prepared.homography, board.frame.size) < eval_cfg["min_in_frame_share"]
             canonical_mask = warp_mask(mask, prepared.homography, board.frame.size)
 
         # enumerate yields (index, item), and the comprehension keeps the indices of the matching claims.
-        hits = [i for i, claim in enumerate(claims) if _on_defect(claim, defect.ref, canonical_mask, min_overlap)]
+        hits = [i for i, claim in enumerate(claims) if on_defect(claim, defect.ref, canonical_mask, min_overlap)]
         claimed.update(hits)
 
         if off_board:
@@ -160,7 +160,7 @@ def score_photo(
             result.found_any += 1
         else:
             result.missed.append(defect.type)
-            result.found_in_review += any(_on_defect(item, defect.ref, canonical_mask, min_overlap) for item in review)
+            result.found_in_review += any(on_defect(item, defect.ref, canonical_mask, min_overlap) for item in review)
         if any(same_type(claims[i].fault_type, defect.type, defect.accept) for i in hits):
             result.found_right_type += 1
 
@@ -172,7 +172,7 @@ def score_photo(
     return result
 
 
-def _photo_name(truth: GroundTruth) -> str:
+def photo_name(truth: GroundTruth) -> str:
     """Name a photo by its board and file, since VisA reuses file names across boards."""
     return f"{truth.board_id}_{Path(truth.photo).stem}"
 
@@ -208,7 +208,7 @@ def run_eval(
 
         if client is not None:
             started = time.perf_counter()
-            suspects = save_suspects(findings, prepared, board, out_dir / "photos" / _photo_name(truth), cfg)
+            suspects = save_suspects(findings, prepared, board, out_dir / "photos" / photo_name(truth), cfg)
             judged = judge_suspects(client, suspects, board.profile, board.netlist, cfg)
             confirmed = [i.fault for i in judged if i.fault and i.fault.status == "confirmed"]
             review = [i.fault for i in judged if i.fault and i.fault.status == "needs_review"]
@@ -227,7 +227,7 @@ def run_eval(
 
         if verbose:
             state = "" if prepared.ok else f" REJECTED: {prepared.message}"
-            print(f"[{number}/{len(records)}] {_photo_name(truth)} {truth.label}: {line}{state}", flush=True)
+            print(f"[{number}/{len(records)}] {photo_name(truth)} {truth.label}: {line}{state}", flush=True)
 
     final = fused_results if client is not None else cv_results
     (out_dir / "results_cv.json").write_text(json.dumps([asdict(r) for r in cv_results], indent=1), encoding="utf-8")

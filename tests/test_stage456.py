@@ -9,6 +9,7 @@ import httpx
 import numpy as np
 import pytest
 
+from eval.make_result_sheets import make_sheet, make_tile
 from eval.metrics import PhotoResult, format_ablation, summarise_by_label
 from eval.run_eval import Claim, sample_clean_photos, score_photo, share_in_frame
 from eval.run_polarity_eval import label_box, pick_shots, status_in_shot
@@ -391,6 +392,19 @@ def test_banner_never_calls_a_board_safe() -> None:
     assert "safe" not in banner_text(_report([]))[0].lower()
     assert "by eye" in banner_text(_report([]))[0]
     assert "by eye" in banner_text(_report([_fault("R1", "MINOR")]))[0]
+
+
+def test_result_sheet_shows_both_crops_and_fits_every_tile() -> None:
+    golden = np.zeros((300, 400, 3), np.uint8)
+    test = np.full((300, 400, 3), 200, np.uint8)
+    tile = make_tile(golden, test, (100, 100, 200, 150), "pcb1_000 R1 MISSING")
+    middle = tile.shape[0] // 2
+    assert tile[middle, tile.shape[1] // 4].tolist() == [0, 0, 0]  # The golden crop is on the left.
+    assert tile[middle, 3 * tile.shape[1] // 4].tolist() == [200, 200, 200]
+
+    sheet = make_sheet([tile] * 5, columns=2)
+    assert sheet.shape[0] >= 3 * tile.shape[0]
+    assert sheet.shape[1] >= 2 * tile.shape[1]
 
 
 def test_polarity_eval_prefers_an_unaugmented_copy_of_each_shot() -> None:

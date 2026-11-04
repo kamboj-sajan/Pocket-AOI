@@ -39,7 +39,70 @@ Nothing is trained or fine-tuned. Muse Glimmer sits behind one OpenAI-compatible
 
 ## Results
 
-<!-- RESULTS -->
+Every number here comes from real photos of real defects. Synthetic defects are never counted.
+
+**In short:** across 134 photos of 4 boards, Pocket AOI flagged 60 of 70 defects (86%) and named the right type for 46 (66%). Muse Glimmer removed about half of the false alarms, and every in-frame defect stayed flagged. A report still has about 2 false alarms per clean photo, and it misses most reversed parts, so treat it as a list of places to look.
+
+### Main evaluation: VisA
+
+[VisA](https://github.com/amazon-science/spot-diff) has real defects on four small boards. The test used every defect photo in its test split, plus 10 clean photos per board: 134 of 254 photos. A fixed seed chose the clean photos before any test result was read, and thresholds were tuned only on a separate development split.
+
+Results for the full pipeline, per board:
+
+| Board | Photos | Found, right type | Found, any type | False alarms per clean photo | Clean photos with a false alarm | False alarms per defect photo | Needs review per photo |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| visa-pcb1 | 28 | 1/6 (17%) | 6/6 (100%) | 0.10 | 1/10 | 0.17 | 0.11 |
+| visa-pcb2 | 28 | 8/14 (57%) | 8/14 (57%) | 1.20 | 5/10 | 1.44 | 0.61 |
+| visa-pcb3 | 30 | 7/12 (58%) | 11/12 (92%) | 2.30 | 9/10 | 2.85 | 0.77 |
+| visa-pcb4 | 48 | 30/38 (79%) | 35/38 (92%) | 4.20 | 10/10 | 4.32 | 0.79 |
+| **All** | **134** | **46/70 (66%)** | **60/70 (86%)** | **1.95** | **25/40** | **2.66** | **0.60** |
+
+Per defect type:
+
+| Defect | Photos | Found, right type | Found, any type | False alarms per defect photo | Needs review per photo |
+| --- | --- | --- | --- | --- | --- |
+| Missing | 47 | 25/34 (74%) | 32/34 (94%) | 2.55 | 0.57 |
+| Extra | 15 | 7/15 (47%) | 12/15 (80%) | 4.13 | 1.20 |
+| Bent | 26 | 8/15 (53%) | 10/15 (67%) | 1.46 | 0.38 |
+| Wrong place | 6 | 6/6 (100%) | 6/6 (100%) | 5.00 | 0.50 |
+
+What Muse Glimmer adds, over the same 134 photos:
+
+| Pipeline | Found, right type | Found, any type | False alarms per clean photo | False alarms per defect photo | Needs review per photo |
+| --- | --- | --- | --- | --- | --- |
+| Classical vision only | 34/70 (49%) | 60/70 (86%) | 4.05 | 4.85 | 0.00 |
+| With Muse Glimmer | 46/70 (66%) | 60/70 (86%) | 1.95 | 2.66 | 0.60 |
+
+False alarms fell from 618 to 328 (47%). All 748 verdict calls got a valid reply.
+
+Read these numbers with care:
+
+- **Not the intended use.** VisA's boards are small and mostly surface-mount, and were shot from a fixed camera. With no hardware available, a handheld phone photo of a through-hole kit with real defects has not been measured.
+- **Consequence cards are not measured.** VisA has no netlists, so Stage 5 did not run in this test. The only cards produced so far are on a demo photo with defects edited in.
+- **One defect per photo.** VisA gives one combined mask per photo, so a photo tagged "scratch, missing" counts as one defect. A defect counts as found when a flagged box overlaps its mask by 30% of the smaller area. For the right type, a bent part accepts SHIFTED or WRONG_PART, and a part in the wrong place accepts SHIFTED, MISSING, EXTRA or WRONG_PART.
+- **Off the outline.** Another 24 defects sit mostly outside the board's outline, such as bent pins hanging off the edge, where the comparison frame does not reach. They are not in the tables above. With Muse Glimmer 9 were flagged, against 10 without it.
+- **A labelling error on `pcb1`.** Muse Glimmer called 5 of its 6 missing parts WRONG_PART. They stay flagged, but the label is wrong: in photo 050 the part is plainly gone, with bare pads showing.
+- **Red banners.** No clean photo had an orientation false alarm on an IC or electrolytic, the case the rules make CRITICAL. Six of the 40 had one on another part. Stage 5 did not run here, so this comes from the rule alone.
+- **How the run went.** The 4-bit build of Muse Glimmer ran on Kaggle's free GPUs. The first run reached about 25 photos before the rotation test was replaced, because of the reversed-part results below. It was restarted, with nothing tuned on those photos. A Kaggle session then ended at photo 117, and the run resumed with the same model build and saved replies.
+
+Every miss and false alarm, as crop pairs with the golden board on the left and the test photo on the right:
+
+![The 10 missed defects as golden and test crop pairs](docs/results/misses.jpg)
+
+- [The 78 false alarms on clean photos](docs/results/false_alarms_clean.jpg)
+- [The 250 false alarms on defect photos](docs/results/false_alarms_defect_photos.jpg)
+
+Many false alarms are real differences that do not matter, such as a non-polar resistor fitted the other way round, or soldered leads that differ between boards. Allowing a 180° turn on non-polar parts looks like the clearest next fix. It is not applied here, because that would be tuning on the test set.
+
+### Time per photo
+
+| Stage | Time | Measured on |
+| --- | --- | --- |
+| Align | 5.0 s (median) | 8 GB M2, through MPS |
+| Find parts | 21.6 s (median) | 8 GB M2, through MPS |
+| Verdicts | about 30 s per suspect, with a median of 5 suspects per photo | Kaggle's 2× T4, 4-bit build |
+
+Verdicts took 11–14 s per call on OpenRouter. The evaluation's own verdict timing is left out, because the restarted run read saved replies.
 
 ### Reversed parts
 
@@ -73,6 +136,9 @@ The original rotation test called 0 of 69 of these parts REVERSED, a flaw that s
 - **Fine-pitch SMD boards** are out of scope.
 - **Anything outside the board's outline**, such as a bent header pin hanging off the edge, is not seen, because the comparison frame is cropped to the board.
 - **Reversed parts are often missed**, as the results above show. A report with no faults does not mean a board is safe to power.
+- **False alarms are common**, at about 2 per clean photo, and more on busy boards. Expect to check a few flagged parts by eye.
+- **Phone photos of through-hole kits with real defects are untested**, as the results above explain.
+- **Each design needs a golden board**, photographed once and labelled.
 
 ## Setup
 
@@ -85,7 +151,7 @@ cp .env.example .env    # then set LLM_API_KEY
 .venv/bin/pytest        # no network or GPU needed
 ```
 
-SAM 3.1 runs on an NVIDIA GPU or on Apple silicon through MPS. On an 8 GB M2 it takes about 25 s per photo. Muse Glimmer can run on a hosted backend, which the default `.env.example` uses, or on your own server.
+SAM 3.1 runs on an NVIDIA GPU or on Apple silicon through MPS. On an 8 GB M2 it takes about 27 s per photo, including alignment. Muse Glimmer can run on a hosted backend, which the default `.env.example` uses, or on your own server.
 
 ## Using it
 
@@ -111,6 +177,9 @@ To score the pipeline against ground truth, with both CV only and CV plus Muse G
 # Every defect photo, plus 10 clean photos per board. Results land in runs/eval/final/
 .venv/bin/pocket-aoi eval --gt eval/ground_truth/ --split test --clean-per-board 10 --tag final
 
+# Draw every miss and false alarm as crop pairs, into docs/results/
+.venv/bin/python -m eval.make_result_sheets --tag final
+
 # The reversed-part test, which needs a free Roboflow key in .env. Results land in runs/eval/polarity/
 .venv/bin/python -m eval.fetch_roboflow_pcba
 .venv/bin/python -m eval.run_polarity_eval --holdout
@@ -122,9 +191,9 @@ Hold the phone 25–35 cm above and roughly parallel to the board, with the boar
 
 ## Data and credits
 
-None of these photos are stored in this repo.
+Apart from the small crops in `docs/results/`, none of these photos are stored in this repo.
 
-- [VisA dataset](https://github.com/amazon-science/spot-diff) by Zou et al., CC BY 4.0: real photos of real defects, used for the main results
+- [VisA dataset](https://github.com/amazon-science/spot-diff) by Zou et al., CC BY 4.0: real photos of real defects, used for the main results and the crops in `docs/results/`
 - [PCBA dataset](https://universe.roboflow.com/123-1fark/pcba-lw1r1) by user 123 on Roboflow Universe, CC BY 4.0: real photos of real reversed parts, used for the reversed-part test
 - ArduTouch kit by [Mitch Altman](https://commons.wikimedia.org/wiki/File:ArduTouch_music_synthesizer_Rev_C_Assembled,_by_Cornfield_Electronics_(2023-03-19_12.20.37_by_Mitch_Altman_@Flickr_52930161269).jpg), CC BY-SA 2.0, with its [design files](https://github.com/maltman23/ArduTouch) as the source of the demo board's netlist
 - Electronic die kit by Raimond Spekking ([top-down](https://commons.wikimedia.org/wiki/File:Assembled_Kit_for_electronic_cube-2461.jpg), [angled](https://commons.wikimedia.org/wiki/File:Assembled_Kit_for_electronic_cube-2460.jpg)), CC BY-SA 4.0
