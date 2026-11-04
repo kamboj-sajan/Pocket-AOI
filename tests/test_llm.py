@@ -2,6 +2,7 @@
 
 import json
 from collections.abc import Callable
+from dataclasses import replace
 from pathlib import Path
 
 import httpx
@@ -71,6 +72,45 @@ def _client(
 
 VERDICT_PROMPT = Prompt("verdict", "v1", "You inspect boards.", "Part {ref}, similarity {ssim}.")
 CONSEQUENCE_PROMPT = Prompt("consequence", "v1", "You explain faults.", "Fault on {ref}.")
+
+
+def _sse_response(pieces: list[str]) -> httpx.Response:
+    """Build a streamed reply in the server-sent events format, with a reasoning chunk that has no text."""
+    deltas = [{"reasoning_content": "thinking"}, *({"content": piece} for piece in pieces)]
+    chunks = [
+        {"id": "1", "object": "chat.completion.chunk", "created": 0, "model": "test-model", "choices": [{"index": 0, "delta": delta}]}
+        for delta in deltas
+    ]
+    body = "".join(f"data: {json.dumps(chunk)}\n\n" for chunk in chunks) + "data: [DONE]\n\n"
+    return httpx.Response(200, headers={"content-type": "text/event-stream"}, content=body.encode())
+
+
+def _streaming_client(tmp_path: Path, handler: Callable[[httpx.Request], httpx.Response]) -> tuple[LLMClient, list[dict]]:
+    client, requests = _client(tmp_path, handler)
+    client.settings = replace(client.settings, stream=True)
+    return client, requests
+
+
+def test_streamed_reply_is_joined_and_cached(tmp_path: Path) -> None:
+    client, requests = _streaming_client(tmp_path, lambda _: _sse_response(['{"val', 'ue": ', "7}"]))
+    answer = client.complete_json(Answer, CONSEQUENCE_PROMPT, {"ref": "C1"})
+    assert answer == Answer(value=7)
+    assert requests[0]["stream"] is True
+    client.complete_json(Answer, CONSEQUENCE_PROMPT, {"ref": "C1"})
+    assert len(requests) == 1
+
+
+def test_stream_that_drops_halfway_counts_as_a_failed_call(tmp_path: Path) -> None:
+    class DroppedStream(httpx.SyncByteStream):
+        def __iter__(self):
+            yield b'data: {"id": "1", "object": "chat.completion.chunk", "created": 0, "model": "m", "choices": [{"index": 0, "delta": {"content": "{"}}]}\n\n'
+            raise httpx.RemoteProtocolError("peer closed connection")
+
+    def handler(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, headers={"content-type": "text/event-stream"}, stream=DroppedStream())
+
+    client, _ = _streaming_client(tmp_path, handler)
+    assert client.complete_json(Answer, CONSEQUENCE_PROMPT, {"ref": "C1"}) is None
 
 
 def test_render_fills_placeholders_and_keeps_json_braces() -> None:

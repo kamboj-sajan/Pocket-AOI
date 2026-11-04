@@ -149,7 +149,7 @@ def write_card(client: LLMClient, fault: Fault, netlist: Netlist | None, cfg: Ma
         check=lambda reply: check_card(reply, fault.ref or "", netlist),
     )
     if card is None:
-        card = template_card(fault.ref, fault.fault_type, floor, netlist, "The model's replies failed validation, so this card uses only the netlist.")
+        card = template_card(fault.ref, fault.fault_type, floor, netlist, "The model gave no valid reply, so this card uses only the netlist.")
     return apply_floor(card, floor)
 
 

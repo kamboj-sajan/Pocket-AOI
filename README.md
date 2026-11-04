@@ -78,7 +78,7 @@ False alarms fell from 618 to 328 (47%). All 748 verdict calls got a valid reply
 Read these numbers with care:
 
 - **Not the intended use.** VisA's boards are small and mostly surface-mount, and were shot from a fixed camera. With no hardware available, a handheld phone photo of a through-hole kit with real defects has not been measured.
-- **Consequence cards are not measured.** VisA has no netlists, so Stage 5 did not run in this test. The only cards produced so far are on a demo photo with defects edited in.
+- **Consequence cards are not measured.** VisA has no netlists, so Stage 5 did not run in this test. The only cards from the model so far are on a demo photo with defects edited in. On that photo, the parts, pins and nets they cite were checked by hand against the netlist and were right, and one of the four says its effect cannot be determined.
 - **One defect per photo.** VisA gives one combined mask per photo, so a photo tagged "scratch, missing" counts as one defect. A defect counts as found when a flagged box overlaps its mask by 30% of the smaller area. For the right type, a bent part accepts SHIFTED or WRONG_PART, and a part in the wrong place accepts SHIFTED, MISSING, EXTRA or WRONG_PART.
 - **Off the outline.** Another 24 defects sit mostly outside the board's outline, such as bent pins hanging off the edge, where the comparison frame does not reach. They are not in the tables above. With Muse Glimmer 9 were flagged, against 10 without it.
 - **A labelling error on `pcb1`.** Muse Glimmer called 5 of its 6 missing parts WRONG_PART. They stay flagged, but the label is wrong: in photo 050 the part is plainly gone, with bare pads showing.
@@ -101,8 +101,9 @@ Many false alarms are real differences that do not matter, such as a non-polar r
 | Align | 5.0 s (median) | 8 GB M2, through MPS |
 | Find parts | 21.6 s (median) | 8 GB M2, through MPS |
 | Verdicts | about 30 s per suspect, with a median of 5 suspects per photo | Kaggle's 2× T4, 4-bit build |
+| Consequence cards | about 2 minutes per fault | Kaggle's 2× T4, 4-bit build |
 
-Verdicts took 11–14 s per call on OpenRouter. The evaluation's own verdict timing is left out, because the restarted run read saved replies.
+The demo photo, with 4 faults, took about 10 minutes in all on that setup. Verdicts took 11–14 s per call on OpenRouter. The evaluation's own verdict timing is left out, because the restarted run read saved replies.
 
 ### Reversed parts
 

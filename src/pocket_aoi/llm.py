@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, TypeVar
 
 import httpx
-from openai import APIError, AuthenticationError, BadRequestError, OpenAI, PermissionDeniedError
+from openai import APIConnectionError, APIError, AuthenticationError, BadRequestError, OpenAI, PermissionDeniedError
 from pydantic import BaseModel, ValidationError
 
 from pocket_aoi.config import REPO_ROOT
@@ -100,6 +100,7 @@ class LLMSettings:
     timeout_s: float
     cache_dir: Path
     reasoning: Mapping[str, str]
+    stream: bool = False
 
     @classmethod
     def from_config(cls, cfg: Mapping[str, Any]) -> "LLMSettings":
@@ -119,6 +120,7 @@ class LLMSettings:
             timeout_s=llm["timeout_s"],
             cache_dir=REPO_ROOT / llm["cache_dir"],
             reasoning=llm["reasoning"],
+            stream=llm["stream"],
         )
 
 
@@ -243,16 +245,32 @@ class LLMClient:
             }
 
         try:
-            # **request expands the dict into keyword arguments.
-            response = self._openai.chat.completions.create(**request)
+            return self._send(request)
         except BadRequestError:
             if "response_format" not in request:
                 raise
             # Not every backend accepts a JSON schema. The prompt still asks for JSON, and pydantic still checks it.
             del request["response_format"]
-            response = self._openai.chat.completions.create(**request)
+            reply = self._send(request)
             self.use_response_format = False
-        return response.choices[0].message.content or ""
+            return reply
+
+    def _send(self, request: dict[str, Any]) -> str:
+        """Send one request and return the reply text, streaming it if the settings ask for that."""
+        if not self.settings.stream:
+            # **request expands the dict into keyword arguments.
+            response = self._openai.chat.completions.create(**request)
+            return response.choices[0].message.content or ""
+
+        # A Cloudflare tunnel ends a response after 100 s without a byte, and a long reasoning
+        # reply takes longer than that. Streaming sends bytes the whole time the model works.
+        chunks = self._openai.chat.completions.create(**request, stream=True)
+        try:
+            # A generator expression inside join, like a loop that appends to a string.
+            return "".join(chunk.choices[0].delta.content or "" for chunk in chunks if chunk.choices)
+        except httpx.HTTPError as error:
+            # A stream that drops halfway raises httpx's error, so report it as any other failed call.
+            raise APIConnectionError(request=chunks.response.request) from error
 
     def _cache_path(self, prompt: Prompt, system: str, user: str, image: bytes | None) -> Path:
         """Hash the image, prompt version, model id and rendered text into a cache file path.

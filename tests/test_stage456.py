@@ -233,7 +233,7 @@ def test_bad_card_is_retried_with_the_error_then_replaced_by_the_template(tmp_pa
     assert "must start" in requests[1]["messages"][1]["content"][0]["text"]
     assert card.headline.startswith("C1 reversed")
     assert (card.severity, card.safe_to_power) == ("CRITICAL", False)
-    assert "failed validation" in card.uncertain
+    assert "no valid reply" in card.uncertain
 
 
 def test_prompt_d_sees_the_pin_swap_table_only_for_orientation_faults(tmp_path: Path) -> None:
