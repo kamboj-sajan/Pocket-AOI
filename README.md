@@ -198,3 +198,11 @@ Apart from the small crops in `docs/results/`, none of these photos are stored i
 - [PCBA dataset](https://universe.roboflow.com/123-1fark/pcba-lw1r1) by user 123 on Roboflow Universe, CC BY 4.0: real photos of real reversed parts, used for the reversed-part test
 - ArduTouch kit by [Mitch Altman](https://commons.wikimedia.org/wiki/File:ArduTouch_music_synthesizer_Rev_C_Assembled,_by_Cornfield_Electronics_(2023-03-19_12.20.37_by_Mitch_Altman_@Flickr_52930161269).jpg), CC BY-SA 2.0, with its [design files](https://github.com/maltman23/ArduTouch) as the source of the demo board's netlist
 - Electronic die kit by Raimond Spekking ([top-down](https://commons.wikimedia.org/wiki/File:Assembled_Kit_for_electronic_cube-2461.jpg), [angled](https://commons.wikimedia.org/wiki/File:Assembled_Kit_for_electronic_cube-2460.jpg)), CC BY-SA 4.0
+
+## Licence
+
+The code, prompts and configs are under the [MIT License](LICENSE). It does not cover the following:
+
+- **Models:** SAM 3.1 is under the SAM License and Muse Glimmer 30B under Apache 2.0. Neither is stored in this repo.
+- **`docs/results/` and `eval/ground_truth/visa/`:** crops and labels from VisA, CC BY 4.0.
+- **`boards/`:** part labels for the third-party boards credited above, and the ArduTouch netlist. The ArduTouch repo's README and top folder state no licence, so check with its author before reusing that netlist.
