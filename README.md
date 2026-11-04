@@ -41,7 +41,7 @@ Nothing is trained or fine-tuned. Muse Glimmer sits behind one OpenAI-compatible
 
 Every number here comes from real photos of real defects. Synthetic defects are never counted.
 
-**In short:** across 134 photos of 4 boards, Pocket AOI flagged 60 of 70 defects (86%) and named the right type for 46 (66%). Muse Glimmer removed about half of the false alarms, and every in-frame defect stayed flagged. A report still has about 2 false alarms per clean photo, and it misses most reversed parts, so treat it as a list of places to look.
+**In short:** across 134 photos of 4 boards, Pocket AOI flagged 60 of 70 defects on the board (86%) and named the right type for 46 (66%). A further 24 defects sit outside the board's outline, and 9 of those were flagged. Muse Glimmer removed about half of the false alarms, and all 60 stayed flagged. A report still has about 2 false alarms per clean photo, and it misses most reversed parts, so treat it as a list of places to look.
 
 ### Main evaluation: VisA
 
